@@ -14,9 +14,14 @@ const buildEmbed = async (member: GuildMember) => {
     const rankers = (await db.member.findMany({
         where: {
             guildId: guild.id,
-            dailyStreak: { gt: 0 }
+            dailyStreak: { gt: 0 },
+            lastAttendedAt: {
+                gte: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
+            }
         }
-    })).sort((a, b) => b.dailyStreak - a.dailyStreak)
+    })).sort((a, b) => (b as any).lastAttendedAt - (a as any).lastAttendedAt);
+
+    console.log(rankers)
 
     if (!rankers.length) {
         return EmbedUI.createMessage('Aucune donnée', { color: 'orange' })
