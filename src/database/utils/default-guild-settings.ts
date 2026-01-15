@@ -81,10 +81,15 @@ export const defaultEventGuildModuleSettings = {
     xpMaxGain: 800,
 }
 
+export const defaultQuestGuildModuleSettings = {
+    // 
+}
+
 export const defaultGuildModuleSettings = {
     eco: defaultEcoGuildModuleSettings,
     level: defaultLevelGuildModuleSettings,
-    event: defaultEventGuildModuleSettings
+    event: defaultEventGuildModuleSettings,
+    quest: defaultQuestGuildModuleSettings
 };
 
 export type GuildModuleName = keyof typeof defaultGuildModuleSettings;

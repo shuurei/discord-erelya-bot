@@ -111,7 +111,7 @@ export default new Command({
     },
     messageCommand: {
         style: 'flat',
-        aliases: ['toppoint', 'tpoint'],
+        aliases: ['topcoins', 'tcoins'],
     },
     async onInteraction(interaction) {
         await interaction.deferReply()

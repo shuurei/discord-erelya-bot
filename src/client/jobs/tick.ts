@@ -2,23 +2,17 @@ import cron from 'node-cron'
 import { jobsLogger } from './index'
 
 import client from '../instance'
-import { guildModuleService, memberService, userService } from '@/database/services'
+import { guildModuleService, memberDailyQuestService, memberService, userService } from '@/database/services'
 
-import { levelUpCard } from '@/ui/assets/cards/levelUpCard'
-
-import { applicationEmojiHelper, guildMemberHelperSync } from '@/helpers'
-import { getDominantColor, levelToXp, randomNumber, timeElapsedFactor, xpToLevel } from '@/utils'
+import { randomNumber, timeElapsedFactor } from '@/utils'
 import { channelBlacklistService } from '@/database/services/channel-blacklist'
-import { handleMemberRoleRewardSync } from '../handlers/member-role-reward-sync'
 import { handleMemberCheckLevelUp } from '../handlers/member-check-level-up'
+import { handleMemberDailyQuestSync } from '../handlers/member-daily-quest-sync'
+import { handleMemberDailyQuestNotify } from '../handlers/member-daily-quest-notify'
 
 jobsLogger.borderBox('🔗 » Tick Job started');
 
 const factor = (condition: any, value = 0) => condition ? value : 0;
-
-const isAtMaxLevel = (maxLevel: number, currentLevel: number) => {
-    return maxLevel && currentLevel ? currentLevel >= maxLevel : false
-}
 
 cron.schedule('* * * * *', async () => {
     try {
@@ -36,15 +30,15 @@ cron.schedule('* * * * *', async () => {
 
             const [
                 userDatabase,
-                memberDatabase,
                 guildEcoModule,
                 guildLevelModule,
+                guildQuestModule,
                 channelScopeBlacklist
             ] = await Promise.all([
                 userService.findById(userId),
-                memberService.findById({ guildId, userId }),
                 guildModuleService.findById({ guildId, moduleName: 'eco' }),
                 guildModuleService.findById({ guildId, moduleName: 'level' }),
+                guildModuleService.findById({ guildId, moduleName: 'quest' }),
                 channelBlacklistService.findMany({ guildId, channelId: session.channelId })
             ]);
 
@@ -93,7 +87,6 @@ cron.schedule('* * * * *', async () => {
 
                 if (settings?.isXpFromMessageEnabled) {
                     if ((minutesElapsed % settings.callGainIntervalMinutes) === 0) {
-
                         const maxGain = 250;
                         const minGain = 150;
 
@@ -128,6 +121,28 @@ cron.schedule('* * * * *', async () => {
                             });
                         }
                     }
+                }
+            }
+
+            if (guildQuestModule?.isActive && !channelScopeBlacklist.QUEST && !(session.flags.isDeaf || session.flags.isMuted)) {
+                const quest = await handleMemberDailyQuestSync({
+                    userId,
+                    guildId
+                }, session.guildLocale);
+
+                if (quest && !quest.isClaimed && quest.voiceMinutesTarget && (quest.voiceMinutesTarget != quest.voiceMinutesProgress)) {
+                    const newQuest = await memberDailyQuestService.updateOrCreate({
+                        userId,
+                        guildId,
+                    }, {
+                        voiceMinutesProgress: quest.voiceMinutesProgress + 1
+                    });
+
+                    await handleMemberDailyQuestNotify({
+                        channel: guild.channels.cache.get(session.channelId),
+                        oldQuest: quest,
+                        newQuest
+                    });
                 }
             }
         }

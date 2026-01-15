@@ -18,7 +18,7 @@ export async function handleMemberCheckLevelUp({
     xpGain,
 }: {
     member: GuildMember | undefined;
-    channel: Channel | undefined;
+    channel?: Channel | null;
     xpGain: number
 }) {
     if (!member) return;

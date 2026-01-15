@@ -6,6 +6,7 @@ import {
     guildModuleService,
     channelBlacklistService,
     guildService,
+    memberDailyQuestService,
 } from '@/database/services'
 
 import {
@@ -18,6 +19,8 @@ import { EmbedUI } from '@/ui'
 import { createActionRow, createButton } from '@/ui/components/common'
 
 import { handleMemberCheckLevelUp } from '@/client/handlers/member-check-level-up'
+import { handleMemberDailyQuestSync } from '@/client/handlers/member-daily-quest-sync'
+import { handleMemberDailyQuestNotify } from '@/client/handlers/member-daily-quest-notify'
 
 /** @deprecated */
 const channelsAutomaticThread = [
@@ -94,9 +97,13 @@ export default new Event({
 
         if (this.client.mainGuild?.id === guildId) {
             if (process.env.ENV === 'PROD' && channelsAutomaticThread.includes(message.channel.id)) {
-                return await message.startThread({
-                    name: `Discussion avec ${message.author.username}`,
-                });
+                if (message.attachments.size > 0) {
+                    return await message.startThread({
+                        name: `Discussion avec ${message.author.username}`,
+                    });
+                } else {
+                    return await message.delete();
+                }
             }
         };
 
@@ -110,12 +117,14 @@ export default new Event({
             guildEcoModule,
             guildLevelModule,
             guildEventModule,
+            guildQuestModule
         ] = await Promise.all([
             userService.findById(userId),
             guildService.findById(guildId),
             guildModuleService.findById({ guildId, moduleName: 'eco' }),
             guildModuleService.findById({ guildId, moduleName: 'level' }),
-            guildModuleService.findById({ guildId, moduleName: 'event' })
+            guildModuleService.findById({ guildId, moduleName: 'event' }),
+            guildModuleService.findById({ guildId, moduleName: 'quest' })
         ]);
 
         if (guildEventModule?.isActive && guildEventModule.settings) {
@@ -312,6 +321,28 @@ export default new Event({
                         xpGain: randomXP
                     });
                 }
+            }
+        }
+
+        if (guildQuestModule?.isActive && !channelScopeBlacklist.QUEST && userSpamData.messageCount === 0) {
+            const quest = await handleMemberDailyQuestSync({
+                userId,
+                guildId
+            }, message.guild.preferredLocale);
+
+            if (quest && !quest.isClaimed && quest.messagesSentTarget && (quest.messagesSentTarget != quest.messagesSentProgress)) {
+                const newQuest = await memberDailyQuestService.updateOrCreate({
+                    userId,
+                    guildId,
+                }, {
+                    messagesSentProgress: quest.messagesSentProgress + 1
+                });
+
+                await handleMemberDailyQuestNotify({
+                    channel: message.channel,
+                    oldQuest: quest,
+                    newQuest
+                });
             }
         }
     }

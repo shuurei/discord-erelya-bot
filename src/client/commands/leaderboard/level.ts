@@ -6,7 +6,7 @@ import db from '@/database/db'
 import { EmbedUI } from '@/ui/EmbedUI'
 
 import { escapeAllMarkdown, getDominantColor } from '@/utils'
-import { applicationEmojiHelper, guildMemberHelperSync } from '@/helpers'
+import { guildMemberHelperSync } from '@/helpers'
 
 const buildEmbed = async (member: GuildMember) => {
     const userId = member.user.id;
@@ -25,7 +25,6 @@ const buildEmbed = async (member: GuildMember) => {
             .map(m => [m.user.id, m])
     );
 
-    const { whiteArrowEmoji } = applicationEmojiHelper();
     const medals = ['🥇', '🥈', '🥉'];
 
     const top = rankers.slice(0, 10)
@@ -37,7 +36,11 @@ const buildEmbed = async (member: GuildMember) => {
             const isAuthor = r.userId === userId;
             const name = memberHelper.getName({ safe: true })
 
-            return `- ${place} ${isAuthor ? `**\`${name}\`**` : `\`${name}\``} ${whiteArrowEmoji} Nv. **${r.activityLevel}**`;
+            return [
+                `- ${place} ${isAuthor ? `**\`${name}\`**` : `\`${name}\``}`,
+                `**↳** Nv. **${r.activityLevel}**`,
+                `**↳** **${r.activityXp.toLocaleString('en')}** XP`
+            ].join('\n');
         }).join('\n');
 
     const leaderboardIndex = rankers.findIndex(r => r.userId === userId);
@@ -56,7 +59,11 @@ const buildEmbed = async (member: GuildMember) => {
             `> 🧠 **${totalLevels.toLocaleString('en')}** niveaux cumulés sur le serveur`,
             topMembersMap.size < 10 ? `***TOP ${topMembersMap.size}***` : `***TOP 10 sur ${rankers.length.toLocaleString('en')} membres***`,
             top,
-            leaderboardIndex >= 10 ? `- **..${leaderboardIndex + 1} \`${memberHelper.getName({ safe: true })}**\` ${whiteArrowEmoji} Nv. **${rankers[leaderboardIndex].activityLevel}**` : ''
+            leaderboardIndex >= 10 ? [
+                `- **..${leaderboardIndex + 1} \`${memberHelper.getName()}**\``,
+                `**↳** Nv. **${rankers[leaderboardIndex].activityLevel}**`,
+                `**↳** **${rankers[leaderboardIndex].activityXp.toLocaleString('en')}** XP`
+            ].join('\n') : ''
         ].join('\n'),
         timestamp: Date.now()
     });
