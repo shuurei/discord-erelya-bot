@@ -96,7 +96,7 @@ export default new Command({
     },
     messageCommand: {
         style: 'flat',
-        aliases: ['topstreak', 'dstreak'],
+        aliases: ['topstreak', 'tstreak'],
     },
     async onInteraction(interaction) {
         await interaction.deferReply()

@@ -1,4 +1,4 @@
-import { VoiceState } from 'discord.js'
+import { Locale, VoiceState } from 'discord.js'
 import { CustomClient } from '@/structures'
 import { memberService } from '@/database/services'
 
@@ -12,6 +12,7 @@ interface CallSessionFlags {
 
 type CallSessionData = {
     guildId: string;
+    guildLocale: Locale;
     channelId: string;
     timestamp: number;
     flags: CallSessionFlags;
@@ -48,6 +49,7 @@ export class CallSessionManager {
         if (state.channelId) {
             return this.cache.set(userId, {
                 guildId: state.guild.id,
+                guildLocale: state.guild.preferredLocale,
                 channelId: state.channelId,
                 timestamp: Date.now(),
                 flags: this.getFlags(state),
@@ -84,6 +86,7 @@ export class CallSessionManager {
 
             session = {
                 guildId: state.guild.id,
+                guildLocale: state.guild.preferredLocale,
                 channelId: state.channelId!,
                 timestamp: Date.now(),
                 flags: nextFlags

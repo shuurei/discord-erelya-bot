@@ -9,6 +9,7 @@ export * from './blacklist-guild'
 // Member
 export * from './member'
 export * from './member-vault'
+export * from './member-daily-quest'
 // Others
 export * from './shop'
 export * from './shop-item'

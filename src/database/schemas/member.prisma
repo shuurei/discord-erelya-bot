@@ -27,6 +27,7 @@ model Member {
     lastHeistedAt  DateTime?
 
     vault MemberVault?
+    dailyQuests MemberDailyQuest[]
 
     @@id([userId, guildId])
     @@map("member")

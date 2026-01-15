@@ -2,6 +2,7 @@ enum BlacklistScope {
     LEVEL
     ECONOMY
     COMMAND
+    QUEST
 }
 
 model ChannelBlacklist {

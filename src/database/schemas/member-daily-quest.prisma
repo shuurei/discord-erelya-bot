@@ -1,12 +1,7 @@
 model MemberDailyQuest {
-    userId String
-    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+    userId  String
     guildId String
-    guild   Guild  @relation(fields: [guildId], references: [id], onDelete: Cascade)
-
-    guildPointsReward Int?
-    activityXpReward  Int?
+    member  Member @relation(fields: [userId, guildId], references: [userId, guildId], onDelete: Cascade)
 
     voiceMinutesTarget Int?
     messagesSentTarget Int?
@@ -14,8 +9,9 @@ model MemberDailyQuest {
     voiceMinutesProgress Int @default(0)
     messagesSentProgress Int @default(0)
 
-    lastCompletedAt DateTime?
+    startAt   DateTime?
+    isClaimed Boolean   @default(false)
 
-    @@id([guildId, userId])
+    @@id([userId, guildId])
     @@map("member_daily_quest")
 }

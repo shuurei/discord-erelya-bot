@@ -18,7 +18,6 @@ model Guild {
     items            ShopItem[]
     modules          GuildModule[]
     blacklists       BlacklistGuild[]
-    dailyQuests      MemberDailyQuest[]
 
     @@map("guild")
 }
