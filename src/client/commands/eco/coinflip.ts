@@ -7,8 +7,8 @@ import { EmbedUI } from '@/ui'
 import { applicationEmojiHelper, guildMemberHelper } from '@/helpers'
 import { randomNumber } from '@/utils'
 
-const MIN_BET = 2_500;
-const MAX_BET = 750_000;
+const MIN_BET = 500;
+const MAX_BET = 50_000;
 
 const MIN_WIN = 0.2;
 const MAX_WIN = 0.4;
@@ -79,8 +79,6 @@ const handleCommand = async ({
     const win = Math.random() < calculateWinChance(amount);
 
     if (win) {
-        amount *= 2;
-
         await memberService.addGuildCoins({ guildId, userId: member.id }, amount);
 
         return EmbedUI.create({
@@ -88,7 +86,7 @@ const handleCommand = async ({
             color: 'green',
             description: [
                 `Vous avez doublé votre mise ! 🔥`,
-                `> 💰 Gain ${greenArrowEmoji} **+${amount.toLocaleString('en')}** pièce de serveur`,
+                `> 💰 Gain ${greenArrowEmoji} **+${(amount).toLocaleString('en')}** pièce de serveur`,
                 `> :coin: Total d'argent ${whiteArrowEmoji} **${(balance.total + amount).toLocaleString('en')}** pièce de serveur`
             ].join('\n')
         });
@@ -101,7 +99,7 @@ const handleCommand = async ({
         color: 'red',
         description: [
             `La chance n'étais pas du bon côté.. 💀`,
-            `> 💸 Perte ${redArrowEmoji} **-${amount.toLocaleString('en')}** pièce de serveur`,
+            `> 💸 Perte ${redArrowEmoji} **-${(amount).toLocaleString('en')}** pièce de serveur`,
             `> :coin: Total d'argent ${whiteArrowEmoji} **${(balance.total - amount).toLocaleString('en')}** pièce de serveur`
         ].join('\n')
     });
