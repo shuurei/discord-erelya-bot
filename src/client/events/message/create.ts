@@ -126,7 +126,7 @@ export default new Event({
             }
         };
 
-        if (!messageStartsWithPrefix) {
+        if (!(messageStartsWithPrefix || channelScopeBlacklist.MESSAGE)) {
             await memberService.incrementMessageCount({ userId, guildId });
         }
 
