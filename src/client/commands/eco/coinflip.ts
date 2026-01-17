@@ -10,16 +10,6 @@ import { randomNumber } from '@/utils'
 const MIN_BET = 500;
 const MAX_BET = 50_000;
 
-const MIN_WIN = 0.2;
-const MAX_WIN = 0.4;
-
-const calculateWinChance = (amount: number) => {
-    const SOFT_CAP = randomNumber(MIN_BET, MAX_WIN);
-    const t = (amount - SOFT_CAP) / (MAX_BET - SOFT_CAP);
-    const clamped = Math.clamp(t, 0, 1);
-    return MAX_WIN - clamped * (MAX_WIN - MIN_WIN);
-};
-
 const handleCommand = async ({
     amount,
     guildId,
@@ -33,7 +23,8 @@ const handleCommand = async ({
 
     const payload = {
         title: 'Coin Flip',
-        thumbnail: { url: helper.getAvatarURL() }
+        thumbnail: { url: helper.getAvatarURL() },
+        footer: { text: `⚠️ Jouez de façon responsable - Les jeux d’argent peuvent entraîner des pertes` }
     }
 
     const balance = await memberService.getTotalGuildCoins({
@@ -58,6 +49,7 @@ const handleCommand = async ({
     if (amount < MIN_BET) {
         return EmbedUI.createErrorMessage({
             ...payload,
+            thumbnail: undefined,
             description: `La Mise minimale est de **${MIN_BET.toLocaleString('en')}** pièces de guilde`
         });
     }
@@ -65,6 +57,7 @@ const handleCommand = async ({
     if (amount > MAX_BET) {
         return EmbedUI.createErrorMessage({
             ...payload,
+                thumbnail: undefined,
             description: `La Mise maximale est de **${MAX_BET.toLocaleString('en')}** pièces de guilde`
         });
     }
@@ -72,13 +65,14 @@ const handleCommand = async ({
     if (balance.total < amount) {
         return EmbedUI.createErrorMessage({
             ...payload,
+            thumbnail: undefined,
             description: `Vous n'avez pas assez d'argent pour parier`
         });
     }
 
     const { greenArrowEmoji, redArrowEmoji, whiteArrowEmoji } = applicationEmojiHelper();
 
-    const win = Math.random() < calculateWinChance(amount);
+    const win = Math.random() < randomNumber(MIN_BET, MAX_BET, true);
 
     if (win) {
         await memberService.addGuildCoins({ guildId, userId: member.id }, amount);
