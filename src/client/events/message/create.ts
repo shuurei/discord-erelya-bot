@@ -15,12 +15,12 @@ import {
     timeElapsedFactor,
 } from '@/utils'
 
-import { EmbedUI } from '@/ui'
 import { createActionRow, createButton } from '@/ui/components/common'
 
 import { handleMemberCheckLevelUp } from '@/client/handlers/member-check-level-up'
 import { handleMemberDailyQuestSync } from '@/client/handlers/member-daily-quest-sync'
 import { handleMemberDailyQuestNotify } from '@/client/handlers/member-daily-quest-notify'
+import { createNotifCard } from '@/ui/assets/cards/notifCard'
 
 /** @deprecated */
 const channelsAutomaticThread = [
@@ -164,27 +164,36 @@ export default new Event({
                     await guildService.setLastEventAt(guild.id);
                     const randomCoins = randomNumber(settings.coinsMinGain, settings.coinsMaxGain);
 
+                    const buttons = [
+                        createButton({
+                            color: 'gray',
+                            label: `Prendre la bourse abandonnée`,
+                            customId: 'take'
+                        }),
+                    ];
+
+                    if (Math.random() < 0.5) {
+                        buttons.push(createButton({
+                            color: 'gray',
+                            label: `Inspecter la zone`,
+                            customId: 'inspect'
+                        }));
+                    }
+
+                    const scenarioNumber = Math.floor(Math.random() * 1000);
+
                     const msg = await message.channel.send({
-                        embeds: [
-                            EmbedUI.create({
-                                color: 'yellow',
-                                title: '💰 Une opportunité se présente',
-                                description: `Alors que vous marchez dans la ville, vous remarquez une **bourse abandonnée** au sol, que voulez-vous faire ?`
-                            })
+                        files: [
+                            {
+                                attachment: await createNotifCard({
+                                    text: `[Scénario #${scenarioNumber} - Alors que vous marchez dans la ville, vous remarquez une bourse abandonnée au sol.]`,
+                                    fontSize: 20
+                                }),
+                                name: 'event.png'
+                            }
                         ],
                         components: [
-                            createActionRow([
-                                createButton({
-                                    color: 'gray',
-                                    label: `Prendre la bourse abandonnée`,
-                                    customId: 'take'
-                                }),
-                                createButton({
-                                    color: 'gray',
-                                    label: `Inspecter la zone`,
-                                    customId: 'inspect'
-                                })
-                            ])
+                            createActionRow(buttons)
                         ]
                     });
 
@@ -192,26 +201,36 @@ export default new Event({
                         const i = await msg.awaitMessageComponent({ time: 30_000 });
 
                         let coinsGained = randomCoins;
-                        let title = '💰 Opportunité réussie';
                         let description = '';
 
-                        if (i.customId === 'take') {
-                            description = `${i.user} décide de prendre la bourse abandonnée et de l'ouvrir. À l'intérieur, vous trouvez **${coinsGained.toLocaleString('en')} pièces** !`;
-                        } else if (i.customId === 'inspect') {
-                            const RNG = Math.random();
+                        const RNG = Math.random();
 
-                            if (RNG < 0.3) {
+                        if (RNG < 0.1) {
+                            coinsGained = 0;
+                            description = `${i.user.username} décide de prendre la bourse, mais il n'y avait rien à l'intérieur.`;
+                        } else if (i.customId === 'take') {
+                            description = `${i.user.username} décide de prendre la bourse abandonnée et de l'ouvrir. À l'intérieur, vous trouvez ${coinsGained.toLocaleString('en')} pièces.`;
+                        } else if (i.customId === 'inspect') {
+                            if (RNG < 0.4) {
                                 coinsGained += Math.floor(coinsGained * 0.25);
-                                description = `${i.user} décide d'inspecter les alentours, vous remarquez une grand-mère à la recherche de quelque chose. Vous lui demandez si elle a perdu la bourse et elle vous répond que oui. Soulagée, elle vous laisse garder la bourse et vous donne un peu plus d'argent. Vous gagnez **${coinsGained.toLocaleString('en')} pièces** !`;
+                                description = `${i.user.username} inspecte et aide la grand-mère qui avait perdu la bourse. Vous gagnez un bonus et obtenez **${coinsGained.toLocaleString('en')} pièces.`;
                             } else {
-                                description = `${i.user} inspecte les alentours mais ne voyez personne. Vous ouvrez donc la bourse abandonnée et découvrez **${coinsGained.toLocaleString('en')} pièces** à l'intérieur !`;
+                                description = `${i.user.username} inspecte les alentours mais ne voyez personne. Vous ouvrez la bourse et découvrez ${coinsGained.toLocaleString('en')} pièces.`;
                             }
                         }
 
                         await memberService.addGuildCoins({ guildId, userId: i.user.id }, coinsGained);
 
                         await i.update({
-                            embeds: [EmbedUI.createSuccessMessage({ title, description })],
+                            files: [
+                                {
+                                    attachment: await createNotifCard({
+                                        text: `Scénario #${scenarioNumber} - ${description}`,
+                                        fontSize: 18
+                                    }),
+                                    name: 'response.png'
+                                }
+                            ],
                             components: []
                         });
                     } catch {
@@ -227,22 +246,36 @@ export default new Event({
                     await guildService.setLastEventAt(guild.id);
                     const randomXp = randomNumber(settings.xpMinGain, settings.xpMaxGain);
 
+                    const buttons = [
+                        createButton({
+                            color: 'gray',
+                            label: 'Lire le grimoire',
+                            customId: 'read'
+                        })
+                    ];
+
+                    if (Math.random() < 0.7) {
+                        buttons.push(createButton({
+                            color: 'gray',
+                            label: 'Lire attentivement',
+                            customId: 'focus'
+                        }));
+                    }
+
+                    const scenarioNumber = Math.floor(Math.random() * 1000);
+
                     const msg = await message.channel.send({
-                        embeds: [
-                            EmbedUI.create({
-                                color: 'blue',
-                                title: '✨ Une opportunité d’apprentissage !',
-                                description: `Alors que vous explorez les environs, vous trouvez un ancien grimoire posé sur un banc. Cliquez pour l’ouvrir et en découvrir le contenu !`
-                            })
+                        files: [
+                            {
+                                attachment: await createNotifCard({
+                                    text: `[Scénario #${scenarioNumber} - Un ancien grimoire est posé sur un banc.]`,
+                                    fontSize: 20
+                                }),
+                                name: 'event.png'
+                            }
                         ],
                         components: [
-                            createActionRow([
-                                createButton({
-                                    color: 'gray',
-                                    label: 'Lire le grimoire',
-                                    customId: 'read_grimoire'
-                                })
-                            ])
+                            createActionRow(buttons)
                         ]
                     });
 
@@ -250,15 +283,22 @@ export default new Event({
                         const i = await msg.awaitMessageComponent({ time: 30_000 });
 
                         let xpGained = randomXp;
-                        let title = '✨ Lecture réussie';
                         let description = '';
 
                         const RNG = Math.random();
-                        if (RNG < 0.3) {
-                            xpGained += Math.floor(xpGained * 0.25);
-                            description = `${i.user} décide de lire le grimoire, vous découvrez des secrets cachés ! Grâce à votre perspicacité, vous gagnez **${xpGained.toLocaleString('en')} XP** !`;
-                        } else {
-                            description = `${i.user} décide de lire le grimoire de manière attentive, le grimoire vous transmets de grandes connaissance. Vous gagnez **${xpGained.toLocaleString('en')} XP** !`;
+
+                        if (RNG < 0.1) {
+                            xpGained = 0;
+                            description = `${i.user.username} ouvre le grimoire, mais les arcanes restent impénétrables.`;
+                        } else if (i.customId === 'read') {
+                            description = `${i.user.username} feuillette le grimoire. D'anciens secrets se révèlent, et ${xpGained.toLocaleString('en')} XP sont acquis.`;
+                        } else if (i.customId === 'focus') {
+                            if (RNG < 0.4) {
+                                xpGained += Math.floor(xpGained * 0.25);
+                                description = `${i.user.username} plonge dans la lecture attentive du grimoire. Des passages cachés apparaissent, accordant ${xpGained.toLocaleString('en')} XP supplémentaires.`;
+                            } else {
+                                description = `${i.user.username} médite sur les runes du grimoire, discernant quelques secrets. ${xpGained.toLocaleString('en')} XP sont gagnés.`;
+                            }
                         }
 
                         await handleMemberCheckLevelUp({
@@ -268,7 +308,15 @@ export default new Event({
                         });
 
                         await i.update({
-                            embeds: [EmbedUI.createSuccessMessage({ title, description })],
+                            files: [
+                                {
+                                    attachment: await createNotifCard({
+                                        text: `Scénario #${scenarioNumber} - ${description}`,
+                                        fontSize: 18
+                                    }),
+                                    name: 'response.png'
+                                }
+                            ],
                             components: []
                         });
                     } catch {
@@ -345,8 +393,8 @@ export default new Event({
 
         if (
             guildQuestModule?.isActive
-            && !channelScopeBlacklist.QUEST
-            && guildQuestModule.settings?.useAntiSpam ? (userSpamData?.messageCount ?? 0) <= 8 : true
+                && !channelScopeBlacklist.QUEST
+                && guildQuestModule.settings?.useAntiSpam ? (userSpamData?.messageCount ?? 0) <= 8 : true
         ) {
             const quest = await handleMemberDailyQuestSync({
                 userId,

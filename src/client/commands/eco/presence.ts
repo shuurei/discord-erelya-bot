@@ -61,7 +61,7 @@ const buildEmbed = async (member: GuildMember) => {
 
     if (isSameDay) {
         payload.color = memberAvatarDominantColor;
-        message = `Vous devez attendre encore ${formatTimeLeft(midnightInGuildTZ.toMillis(), nowInGuildTZ.toMillis())} avant de refaire valoir votre présence !`;
+        message = `Vous devez attendre encore ${formatTimeLeft(midnightInGuildTZ.toMillis(), { now: nowInGuildTZ.toMillis() })} avant de refaire valoir votre présence !`;
     } else {
         const yesterdayInGuildTZ = nowInGuildTZ.minus({ days: 1 });
         const isSameDayAsYesterday = lastInGuildTZ ? lastInGuildTZ.hasSame(yesterdayInGuildTZ, 'day') : false;

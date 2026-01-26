@@ -5,7 +5,7 @@ import db from '@/database/db'
 import { guildModuleService, memberService } from '@/database/services'
 
 import { createCooldown, formatTimeLeft } from '@/utils'
-import { EmbedUI } from '@/ui/EmbedUI'
+import { createNotifCard } from '@/ui/assets/cards/notifCard'
 
 export default new Command({
     nameLocalizations: {
@@ -55,25 +55,29 @@ export default new Command({
 
         if (targetUser.bot) {
             return interaction.reply({
-                embeds: [
-                    EmbedUI.createMessage({
-                        color: 'red',
-                        title: '🤖 Impossible de voler un bot'
-                    })
+                files: [
+                    {
+                        attachment: await createNotifCard({
+                            text: `[la cible sélectionnée ne répond pas aux critères d’interaction.]`,
+                            fontSize: 24,
+                        }),
+                        name: 'infoCard.png'
+                    }
                 ],
-                flags: MessageFlags.Ephemeral
             });
         }
 
         if (targetUser.id === robberId) {
             return interaction.reply({
-                embeds: [
-                    EmbedUI.createMessage({
-                        color: 'red',
-                        title: '🙃 Tu ne peux pas te voler toi-même'
-                    })
+                files: [
+                    {
+                        attachment: await createNotifCard({
+                            text: `[une tentative d’interaction avec soi-même a été détectée. Action annulée.]`,
+                            fontSize: 24,
+                        }),
+                        name: 'infoCard.png'
+                    }
                 ],
-                flags: MessageFlags.Ephemeral
             });
         }
 
@@ -86,14 +90,15 @@ export default new Command({
         const { isActive: canRob, expireTimestamp } = createCooldown(robber.lastRobAt, ecoSettings.robCooldown);
         if (canRob) {
             return await interaction.reply({
-                embeds: [
-                    EmbedUI.createMessage({
-                        color: 'red',
-                        title: '⏳ Cooldown',
-                        description: `Tu dois attendre ${formatTimeLeft(expireTimestamp)} avant de voler à nouveau !`,
-                    }),
+                files: [
+                    {
+                        attachment: await createNotifCard({
+                            text: `[${formatTimeLeft(expireTimestamp, { withMarkdown: false })} restantes avant la prochaine tentative autorisée.]`,
+                            fontSize: 24,
+                        }),
+                        name: 'infoCard.png'
+                    }
                 ],
-                flags: MessageFlags.Ephemeral
             });
         }
 
@@ -106,26 +111,30 @@ export default new Command({
 
         if (!target.guildCoins) {
             return await interaction.reply({
-                embeds: [
-                    EmbedUI.createMessage({
-                        color: 'orange',
-                        description: `Cette personne n'a pas l'air riche, je devrais changer de cible`,
-                    }),
+                files: [
+                    {
+                        attachment: await createNotifCard({
+                            text: `[la cible ne possède aucune pièce de serveur.]`,
+                            fontSize: 24,
+                        }),
+                        name: 'infoCard.png'
+                    }
                 ],
-                flags: MessageFlags.Ephemeral
             });
         }
 
         const { isActive: isAlreadyRobbed } = createCooldown(target.lastRobbedAt, ecoSettings.robbedCooldown);
         if (isAlreadyRobbed) {
             return await interaction.reply({
-                embeds: [
-                    EmbedUI.createMessage({
-                        color: 'orange',
-                        description: `Mhhh.. On dirait bien que cette personne es vigilante, essayons plus tard 🤔`,
-                    }),
+                files: [
+                    {
+                        attachment: await createNotifCard({
+                            text: `[la cible est sous protection temporaire. Les pièces de serveur ne peuvent pas être ciblées.]`,
+                            fontSize: 24,
+                        }),
+                        name: 'infoCard.png'
+                    }
                 ],
-                flags: MessageFlags.Ephemeral
             });
         }
 
@@ -147,13 +156,16 @@ export default new Command({
             });
 
             return await interaction.reply({
-                embeds: [
-                    EmbedUI.createMessage({
-                        color: 'green',
-                        title: '🕵️‍♂️ Vol réussi !',
-                        description: `Tu as volé **${stolenAmount.toLocaleString('en')}** pièces à **${targetUser.username}** !`,
-                    }),
-                ],
+                files: [
+                    {
+                        attachment: await createNotifCard({
+                            text: `[l'interaction a réussi. Vous avez volé ${stolenAmount.toLocaleString('en')} pièces ont été transférées vers votre inventaire.]`,
+                            fontSize: 24,
+                            theme: 'green'
+                        }),
+                        name: 'successCard.png'
+                    }
+                ]
             });
         } else {
             const { total } = await memberService.getTotalGuildCoins(robberKey);
@@ -162,13 +174,18 @@ export default new Command({
             await memberService.removeGuildCoinsWithVault(robberKey, penalty);
 
             return interaction.reply({
-                embeds: [
-                    EmbedUI.createMessage({
-                        color: 'red',
-                        title: '🚨 Vol échoué !',
-                        description: `Tu t'es fait attraper et tu perds **${penalty.toLocaleString('en')}** pièces en amende !`,
-                    }),
-                ],
+                files: [
+                    {
+                        attachment: await createNotifCard({
+                            text: penalty === 0
+                                ? `[l'interaction a échoué. Aucune pénalité applicable.]`
+                                : `[l'interaction a échoué. Une pénalité de ${penalty.toLocaleString('en')} pièces a été appliquée.]`,
+                            fontSize: 24,
+                            theme: 'red'
+                        }),
+                        name: 'failureCard.png'
+                    }
+                ]
             });
         }
     }

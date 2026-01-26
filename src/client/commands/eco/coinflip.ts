@@ -1,17 +1,17 @@
-import { GuildMember } from 'discord.js'
+import { GuildMember, MessageFlags } from 'discord.js'
 import { Command } from '@/structures/Command'
 
 import { memberService } from '@/database/services'
-import { EmbedUI } from '@/ui'
 
-import { applicationEmojiHelper, guildMemberHelper } from '@/helpers'
 import { randomNumber } from '@/utils'
+import { createNotifCard } from '@/ui/assets/cards/notifCard'
+import { createMediaGallery } from '@/ui/components/common'
 
-const MIN_BET = 500;
-const MAX_BET = 50_000;
+const MIN_BET = 200;
+const MAX_BET = 75_000;
 
-const MIN_WIN = 0.25;
-const MAX_WIN = 0.45;
+const MIN_WIN = 0.4;
+const MAX_WIN = 0.5;
 
 const handleCommand = async ({
     amount,
@@ -22,19 +22,10 @@ const handleCommand = async ({
     guildId: string;
     member: GuildMember;
 }) => {
-    const helper = await guildMemberHelper(member, { fetchAll: true });
-
-    const payload = {
-        title: 'Coin Flip',
-        thumbnail: { url: helper.getAvatarURL() },
-        footer: { text: `⚠️ Jouez de façon responsable - Les jeux d’argent peuvent entraîner des pertes` }
-    }
-
     const balance = await memberService.getTotalGuildCoins({
         guildId,
         userId: member.id
     });
-
 
     if (typeof amount === 'string' && amount === 'max') {
         amount = Math.min(balance.total, MAX_BET);
@@ -43,65 +34,92 @@ const handleCommand = async ({
     amount = +amount;
 
     if (isNaN(amount)) {
-        return EmbedUI.createErrorMessage({
-            ...payload,
-            description: `Je ne comprends pas ce chiffre`
-        });
+        return [
+            {
+                attachment: await createNotifCard({
+                    text: "[Chiffre invalide]",
+                    theme: 'red'
+                }),
+                name: 'failure.png'
+            }
+        ];
     }
 
     if (amount < MIN_BET) {
-        return EmbedUI.createErrorMessage({
-            ...payload,
-            thumbnail: undefined,
-            description: `La Mise minimale est de **${MIN_BET.toLocaleString('en')}** pièces de serveur`
-        });
+        return [
+            {
+                attachment: await createNotifCard({
+                    text: `[La Mise minimale est de ${MIN_BET.toLocaleString('en')} pièces.]`,
+                    theme: 'red'
+                }),
+                name: 'failure.png'
+            }
+        ];
     }
 
     if (amount > MAX_BET) {
-        return EmbedUI.createErrorMessage({
-            ...payload,
-                thumbnail: undefined,
-            description: `La Mise maximale est de **${MAX_BET.toLocaleString('en')}** pièces de serveur`
-        });
+        return [
+            {
+                attachment: await createNotifCard({
+                    text: `[La Mise maximale est de ${MAX_BET.toLocaleString('en')} pièces.]`,
+                    theme: 'red'
+                }),
+                name: 'failure.png'
+            }
+        ];
     }
 
     if (balance.total < amount) {
-        return EmbedUI.createErrorMessage({
-            ...payload,
-            thumbnail: undefined,
-            description: `Vous n'avez pas assez d'argent pour parier`
-        });
+        return [
+            {
+                attachment: await createNotifCard({
+                    text: `[Vous n'avez pas assez d'argent pour parier.]`,
+                    theme: 'red'
+                }),
+                name: 'failure.png'
+            }
+        ];
     }
-
-    const { greenArrowEmoji, redArrowEmoji, whiteArrowEmoji } = applicationEmojiHelper();
 
     const win = Math.random() < randomNumber(MIN_WIN, MAX_WIN, true);
 
     if (win) {
         await memberService.addGuildCoins({ guildId, userId: member.id }, amount);
 
-        return EmbedUI.create({
-            ...payload,
-            color: 'green',
-            description: [
-                `Vous avez doublé votre mise ! 🔥`,
-                `> 💰 Gain ${greenArrowEmoji} **+${amount.toLocaleString('en')}** pièce de serveur`,
-                `> :coin: Total d'argent ${whiteArrowEmoji} **${(balance.total + amount).toLocaleString('en')}** pièce de serveur`
-            ].join('\n')
-        });
+        return [
+            {
+                attachment: await createNotifCard({
+                    text: `[Vous avez doublé votre mise. Vous avez gagné ${amount.toLocaleString('en')} de pièces.]`,
+                    theme: 'green'
+                }),
+                name: 'success.png'
+            },
+            {
+                attachment: await createNotifCard({
+                    text: `[Nouveau solde : ${(balance.total + amount).toLocaleString('en')} pièces.]`,
+                }),
+                name: 'newBalance.png'
+            }
+        ];
     }
 
     await memberService.removeGuildCoinsWithVault({ guildId, userId: member.id }, amount);
 
-    return EmbedUI.create({
-        ...payload,
-        color: 'red',
-        description: [
-            `La chance n'étais pas du bon côté.. 💀`,
-            `> 💸 Perte ${redArrowEmoji} **-${(amount).toLocaleString('en')}** pièce de serveur`,
-            `> :coin: Total d'argent ${whiteArrowEmoji} **${(balance.total - amount).toLocaleString('en')}** pièce de serveur`
-        ].join('\n')
-    });
+    return [
+        {
+            attachment: await createNotifCard({
+                text: `[Vous avez perdu votre mise. Vous avez perdu ${amount.toLocaleString('en')} de pièces.]`,
+                theme: 'red'
+            }),
+            name: 'failure.png'
+        },
+        {
+            attachment: await createNotifCard({
+                text: `[Nouveau solde : ${(balance.total - amount).toLocaleString('en')} pièces.]`,
+            }),
+            name: 'newBalance.png'
+        }
+    ];
 }
 
 export default new Command({
@@ -135,25 +153,33 @@ export default new Command({
         }
     },
     async onInteraction(interaction) {
+        const files = await handleCommand({
+            amount: interaction.options.getString('amount', true) as 'max',
+            guildId: interaction.guild.id,
+            member: interaction.member
+        });
+
         return await interaction.reply({
-            embeds: [
-                await handleCommand({
-                    amount: interaction.options.getString('amount', true) as 'max',
-                    guildId: interaction.guild.id,
-                    member: interaction.member
-                })
-            ]
+            flags: MessageFlags.IsComponentsV2,
+            files,
+            components: files.map((file) => {
+                return createMediaGallery([{ media: { url: `attachment://${file.name}` } }])
+            })
         });
     },
     async onMessage(message, { args: [amount] }) {
+        const files = await handleCommand({
+            amount: amount as 'max',
+            guildId: message.guild.id,
+            member: message.member!
+        });
+
         return await message.reply({
-            embeds: [
-                await handleCommand({
-                    amount: amount as 'max',
-                    guildId: message.guild.id,
-                    member: message.member!
-                })
-            ]
+            flags: MessageFlags.IsComponentsV2,
+            files,
+            components: files.map((file) => {
+                return createMediaGallery([{ media: { url: `attachment://${file.name}` } }])
+            })
         });
     }
 })

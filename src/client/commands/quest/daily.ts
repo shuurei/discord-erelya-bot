@@ -148,7 +148,7 @@ export default new Command({
             title: 'Quête quotidienne 🎯',
             description: [
                 `> 💡 Complétez **tous les objectifs à 100%** pour réclamer la récompense, la quête se réinitialise chaque jour à minuit`,
-                `- ⏳ Temps avant réinitialisation ${whiteArrowEmoji} **${formatTimeLeft(midnightInGuildTZ.toMillis(), nowInGuildTZ.toMillis())}**`
+                `- ⏳ Temps avant réinitialisation ${whiteArrowEmoji} **${formatTimeLeft(midnightInGuildTZ.toMillis(), { now: nowInGuildTZ.toMillis() })}**`
             ].join('\n'),
             fields,
             footer: { text: interaction.guild.name },
