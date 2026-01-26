@@ -8,26 +8,43 @@ export const isOnlySpaces = (str: string) => {
 
 export const formatTimeLeft = (
     expireTimestamp: number,
-    now = Date.now(),
-    withSeconds = false
+    options?: {
+        now?: number;
+        withSeconds?: boolean,
+        withMarkdown?: boolean
+    },
 ): string => {
-    const remaining = Math.max(0, expireTimestamp - now);
+    const {
+        now = Date.now(),
+        withSeconds = false,
+        withMarkdown = true,
+    } = options ?? {}
 
-    const hours = Math.floor(remaining / 3_600_000);
-    const minutes = Math.floor((remaining % 3_600_000) / 60_000);
-    const seconds = Math.floor((remaining % 60_000) / 1_000);
+    const remaining = Math.max(0, expireTimestamp - now)
+
+    const hours = Math.floor(remaining / 3_600_000)
+    const minutes = Math.floor((remaining % 3_600_000) / 60_000)
+    const seconds = Math.floor((remaining % 60_000) / 1_000)
+
+    const wrap = (value: string) => withMarkdown ? `**${value}**` : value
 
     if (hours > 0) {
-        return withSeconds
-            ? `**${hours}h ${minutes}min ${seconds}'s**`
-            : `**${hours}h ${minutes}min**`;
+        return wrap(
+            withSeconds
+                ? `${hours}h ${minutes}min ${seconds}s`
+                : `${hours}h ${minutes}min`
+        );
     }
 
     if (minutes > 0) {
-        return withSeconds ? `**${minutes}min ${seconds}'s**` : `**${minutes}min**`;
+        return wrap(
+            withSeconds
+                ? `${minutes}min ${seconds}s`
+                : `${minutes}min`
+        );
     }
 
-    return `**${seconds}'s**`;
+    return wrap(`${seconds}s`);
 }
 
 export const formatTimeLeftFromMinutes = (
@@ -55,4 +72,8 @@ export const formatTimeLeftFromMinutes = (
     }
 
     return `**${seconds}'s**`;
+}
+
+export const isEmoji = (char: string) => {
+    return /\p{Emoji_Presentation}/u.test(char)
 }
