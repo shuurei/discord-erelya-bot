@@ -451,7 +451,7 @@ export default new Command({
                         });
                     }
 
-                    if (!item || !item.roleId || !item.cost) {
+                    if (!item || !item.roleId || item.cost === null) {
                         await refreshShop();
                         return await i.followUp({
                             flags: MessageFlags.Ephemeral,
