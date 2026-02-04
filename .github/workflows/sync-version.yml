@@ -1,0 +1,15 @@
+name: Sync Package Version on Tag Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  tag-release:
+    uses: shuurei/workflows/.github/workflows/sync-version.yml@main
+    with:
+      branch: main
