@@ -1,5 +1,4 @@
 import Canvas from '@napi-rs/canvas'
-import { request } from 'undici'
 import chroma from 'chroma-js'
 
 import { levelUpCardBg } from './bg'
@@ -50,8 +49,8 @@ export const levelUpCard = async ({
     const borderBottom = await Canvas.loadImage(levelUpCardBorderBottom({ leftSide: lightColor, rightSide: blackColor }));
     ctx.drawImage(borderBottom, 139, 86, 129, 10);
 
-    const { body } = await request(avatarURL);
-    const avatar = await Canvas.loadImage(await body.arrayBuffer());
+    const res = await fetch(avatarURL)
+    const avatar = await Canvas.loadImage(await res.arrayBuffer());
 
     ctx.font = `14px Quantico Bold`;
     ctx.fillStyle = textColor;

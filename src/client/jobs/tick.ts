@@ -1,4 +1,4 @@
-import cron from 'node-cron'
+import { Cron } from 'croner'
 import { jobsLogger } from './index'
 
 import client from '../instance'
@@ -14,7 +14,8 @@ jobsLogger.borderBox('🔗 » Tick Job started');
 
 const factor = (condition: any, value = 0) => condition ? value : 0;
 
-cron.schedule('* * * * *', async () => {
+new Cron('* * * * *', async () => {
+    console.log('1 Minutes ago')
     try {
         for (const [userId, session] of client.callSessions.cache) {
             const guild = client.guilds.cache.find((guild) => guild.id === session.guildId);
@@ -155,4 +156,7 @@ cron.schedule('* * * * *', async () => {
     } catch (ex) {
         return jobsLogger.error(ex);
     }
+}, {
+    name: 'tick-jobs',
+    timezone: 'UTC'
 });
