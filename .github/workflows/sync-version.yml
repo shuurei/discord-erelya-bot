@@ -12,4 +12,6 @@ jobs:
   tag-release:
     uses: shuurei/workflows/.github/workflows/sync-version.yml@main
     with:
-      branch: main
+      main_branch: main
+      dev_branch: dev
+      release_tag: ${{ github.ref_name }}
