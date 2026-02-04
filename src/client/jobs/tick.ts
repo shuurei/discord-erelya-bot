@@ -15,7 +15,6 @@ jobsLogger.borderBox('🔗 » Tick Job started');
 const factor = (condition: any, value = 0) => condition ? value : 0;
 
 new Cron('* * * * *', async () => {
-    console.log('1 Minutes ago')
     try {
         for (const [userId, session] of client.callSessions.cache) {
             const guild = client.guilds.cache.find((guild) => guild.id === session.guildId);
