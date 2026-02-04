@@ -153,13 +153,15 @@ export default new Command({
         }
     },
     async onInteraction(interaction) {
+        await interaction.deferReply();
+
         const files = await handleCommand({
             amount: interaction.options.getString('amount', true) as 'max',
             guildId: interaction.guild.id,
             member: interaction.member
         });
 
-        return await interaction.reply({
+        return await interaction.editReply({
             flags: MessageFlags.IsComponentsV2,
             files,
             components: files.map((file) => {
