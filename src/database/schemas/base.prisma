@@ -1,8 +1,8 @@
 datasource db {
-    provider = "mysql"
+  provider = "mysql"
 }
 
 generator client {
-    provider = "prisma-client"
-    output   = "../core"
+  provider = "prisma-client"
+  output   = "../core"
 }

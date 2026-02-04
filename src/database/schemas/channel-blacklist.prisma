@@ -1,18 +1,18 @@
 enum BlacklistScope {
-    LEVEL
-    ECONOMY
-    COMMAND
-    QUEST
-    MESSAGE
+  LEVEL
+  ECONOMY
+  COMMAND
+  QUEST
+  MESSAGE
 }
 
 model ChannelBlacklist {
-    guildId String
-    guild   Guild  @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  guildId String
+  guild   Guild  @relation(fields: [guildId], references: [id], onDelete: Cascade)
 
-    scope BlacklistScope
-    channelId   String
+  scope     BlacklistScope
+  channelId String
 
-    @@id([guildId, scope, channelId])
-    @@map("channel_blacklist")
+  @@id([guildId, scope, channelId])
+  @@map("channel_blacklist")
 }

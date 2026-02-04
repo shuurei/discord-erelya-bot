@@ -1,21 +1,21 @@
 model Shop {
-    guildId String
-    guild   Guild  @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  guildId String
+  guild   Guild  @relation(fields: [guildId], references: [id], onDelete: Cascade)
 
-    isOpen         Boolean @default(true)
-    useTagDiscount Boolean @default(false)
+  isOpen         Boolean @default(true)
+  useTagDiscount Boolean @default(false)
 
-    color       Int?
-    name        String
-    description String?
-    emoji       String?
-    bannerUrl   String?
+  color       Int?
+  name        String
+  description String?
+  emoji       String?
+  bannerUrl   String?
 
-    expiresAt DateTime?
-    createdAt DateTime  @default(now())
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
 
-    items ShopItem[]
+  items ShopItem[]
 
-    @@id([guildId, name])
-    @@map("shop")
+  @@id([guildId, name])
+  @@map("shop")
 }
