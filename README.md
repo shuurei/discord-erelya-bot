@@ -1,15 +1,14 @@
 <div align="center">
-    <h1>VØID</h1>
-    <h6>(I currently don't have a r.i.p logo)</h6>
+    <h1>Erelya</h1>
 	<p>
-        <img alt="GitHub Release" src="https://img.shields.io/github/v/release/discord-void-project/bot?include_prereleases&sort=date&display_name=tag&style=flat&label=version&color=6886ff">
-        <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/discord-void-project/bot?logo=github">
-        <img alt="GitHub Release Date" src="https://img.shields.io/github/release-date/discord-void-project/bot?logo=github">
+        <img alt="GitHub Release" src="https://img.shields.io/github/v/release/shuurei/discord-erelya-bot?include_prereleases&sort=date&display_name=tag&style=flat&label=version&color=6886ff">
+        <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/shuurei/discord-erelya-bot?logo=github">
+        <img alt="GitHub Release Date" src="https://img.shields.io/github/release-date/shuurei/discord-erelya-bot?logo=github">
 	</p>
 </div>
 
 ## 👀 About
-🚀 **Void** is a modern, modular, and powerful Discord bot built with **TypeScript** and **Prisma** !
+🚀 **Erelya** is a modern, modular, and powerful Discord bot built with **TypeScript** and **Prisma** !
 
 ## ✨ Features
 
@@ -23,7 +22,7 @@
 
 Before installing the project, make sure you have:
 
-1. **Node.js** `>=23.x` and **npm** or **pnpm** installed
+1. **Node.js** `>=24.x` and **npm** or **pnpm** installed
 2. A **MySQL** database (or adjust `DATABASE_URL` to your database type)
 3. A **Discord Application** with a bot created:
    * Go to [Discord Developer Portal](https://discord.com/developers/applications)
@@ -40,7 +39,7 @@ Before installing the project, make sure you have:
 ### 1. Clone the project
 
 ```bash
-git clone https://github.com/discord-void-project/bot.git
+git clone https://github.com/discord-erelya-project/bot.git
 cd bot
 ```
 
@@ -56,7 +55,7 @@ Create a `.env` file based on `.env.example` and set your configuration:
 
 ```env
 DISCORD_TOKEN=your_token_here
-DATABASE_URL=mysql://user:password@localhost:3306/void_dev
+DATABASE_URL=mysql://user:password@localhost:3306/erelya_dev
 ```
 
 ### 4. Generate Prisma client

@@ -1,106 +1,150 @@
+import { GuildMember } from 'discord.js'
 import { Command } from '@/structures/Command'
 
-import { guildSettingsService, memberService } from '@/database/services'
-import { mainGuildConfig } from '@/client/config'
-import { createCooldown } from '@/utils'
-import { EmbedUI } from '@/ui/EmbedUI'
+import { memberService } from '@/database/services'
 
-interface handleCommandContext {
-    userId: string;
-    guildId: string;
-    username: string;
-    reply: (data: any) => Promise<any>
-}
+import { applicationEmojiHelper, guildMemberHelper } from '@/helpers'
+import { EmbedUI, EmbedUIData } from '@/ui/EmbedUI'
 
-const handleCommand = async ({
-    userId,
-    guildId,
-    username,
-    reply
-}: handleCommandContext) => {
-    const { member } = await memberService.findOrCreate(userId, guildId);
-    const ecoSettings = await guildSettingsService.findOrCreate(guildId, 'eco');
+import {
+    formatCompactNumber,
+    formatTimeLeft,
+    getDominantColor,
+    randomNumber,
+    tzMap
+} from '@/utils'
+import { DateTime } from 'luxon'
 
-    const COOLDOWN = 24 * 60 * 60 * 1000;
-    const MIN_REWARD = ecoSettings.dailyMinGain;
-    const MAX_REWARD = ecoSettings.dailyMaxGain;
+const MIN_REWARD = 250;
+const MAX_REWARD = 750;
 
-    const getReward = () => Math.floor(Math.random() * (MAX_REWARD - MIN_REWARD + 1)) + MIN_REWARD;
+const STREAK_STEP = 7;
 
-    const { isActive, expireTimestamp } = createCooldown(member.lastDailyAt, COOLDOWN);
-    const now = Date.now();
+const getStreakDay = (streak: number) => streak % STREAK_STEP || STREAK_STEP;
 
-    if (isActive) {
-        const remaining = expireTimestamp - now;
-        const hours = Math.floor(remaining / (1000 * 60 * 60));
-        const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+const buildEmbed = async (member: GuildMember) => {
+    const { whiteArrowEmoji } = applicationEmojiHelper();
 
-        const timeLeft =
-            hours > 0
-                ? `**${hours}h ${minutes}min**`
-                : `**${minutes}min**`;
+    const userId = member.user.id;
+    const guildId = member.guild.id;
+    const guildLocale = member.guild.preferredLocale;
+    const guildTZ = tzMap[guildLocale] || 'UTC';
 
-        return reply({
-            embeds: [
-                EmbedUI.createMessage({
-                    color: 'red',
-                    title: '⏳ Présence déjà effectuée',
-                    description: `Vous devez attendre encore ${timeLeft} avant de refaire valoir votre présence.`,
-                })
-            ]
-        });
+    const memberKey = { userId, guildId }
+
+    const memberHelper = await guildMemberHelper(member, { fetchAll: true });
+    const memberAvatarDominantColor = await getDominantColor(memberHelper.getAvatarURL({ forceStatic: true }));
+
+    let { dailyStreak, lastAttendedAt } = await memberService.findOrCreate(memberKey);
+
+    const lastInGuildTZ = lastAttendedAt ? DateTime.fromJSDate(lastAttendedAt, { zone: guildTZ }) : null;
+    const nowInGuildTZ = DateTime.now().setZone(guildTZ);
+
+    const midnightInGuildTZ = nowInGuildTZ.endOf('day');
+
+    const isSameDay = lastInGuildTZ ? lastInGuildTZ.hasSame(nowInGuildTZ, 'day') : false;
+
+    let message: string;
+
+    const payload = {
+        thumbnail: {
+            url: memberHelper.getAvatarURL()
+        },
+        title: `Présence de ${memberHelper.getName()}`,
+        timestamp: Date.now(),
+        footer: {
+            text: `Les données de présence sont réinitialisées à minuit`
+        }
+    } as Partial<EmbedUIData>
+
+    const getDailyStreakDay = () => Math.min(dailyStreak % 7, 7);
+
+    if (isSameDay) {
+        payload.color = memberAvatarDominantColor;
+        message = `Vous devez attendre encore ${formatTimeLeft(midnightInGuildTZ.toMillis(), { now: nowInGuildTZ.toMillis() })} avant de refaire valoir votre présence !`;
+    } else {
+        const yesterdayInGuildTZ = nowInGuildTZ.minus({ days: 1 });
+        const isSameDayAsYesterday = lastInGuildTZ ? lastInGuildTZ.hasSame(yesterdayInGuildTZ, 'day') : false;
+
+        const data = isSameDayAsYesterday
+            ? await memberService.incrementDailyStreak(memberKey)
+            : await memberService.resetDailyStreak(memberKey);
+
+        dailyStreak = data.dailyStreak;
+        
+        const baseReward = randomNumber(MIN_REWARD, MAX_REWARD);
+
+        const streakDay = getStreakDay(dailyStreak);
+        const bonusReward = streakDay === STREAK_STEP ? Math.floor(baseReward * 1.75) : 0;
+
+        const totalReward = baseReward + bonusReward;
+        
+        await Promise.all([
+            memberService.setLastAttendedAt(memberKey),
+            memberService.addGuildCoins(memberKey, totalReward),
+        ]);
+
+        message = bonusReward
+            ? `🔥 **Jour ${dailyStreak}** ! Vous gagnez **${baseReward} + ${formatCompactNumber(bonusReward)} pièces bonus** 🎁`
+            : `Vous avez gagné **${totalReward} pièces** pour votre présence d'aujourd'hui !`;
+
     }
 
-    const reward = getReward();
-
-    await memberService.updateOrCreate(userId, guildId, {
-        update: {
-            coins: { increment: reward },
-            lastDailyAt: new Date()
-        },
-    });
-
-    return reply({
-        embeds: [
-            EmbedUI.createMessage({
-                color: 'green',
-                title: `✅ Présence de ${username}`,
-                description: `Bravo ! Vous avez gagné **${reward} pièces** pour votre présence d'aujourd'hui !`,
-            })
+    return EmbedUI.createMessage({
+        color: 'green',
+        ...payload,
+        description: message,
+        fields: [
+            {
+                name: 'Progression',
+                value: [
+                    `Encore **${7 - (dailyStreak % 7)}** jours avant d'obtenir un **bonus**`,
+                    `${Array.from({ length: 7 }, (_, i) => {
+                        return i < getDailyStreakDay() ? '▰' : '▱'
+                    }).join('')} (${dailyStreak % 7} / 7)`
+                ].join('\n'),
+                inline: true
+            },
+            {
+                name: 'Série quotidienne',
+                value: `🔥 ${whiteArrowEmoji} **${dailyStreak}** jours`,
+                inline: true
+            },
         ]
-    });
+    })
 }
 
 export default new Command({
     nameLocalizations: {
         fr: 'présence'
     },
-    description: 'daily',
+    description: '⌛ Execute every day to earn daily server coins',
+    descriptionLocalizations: {
+        fr: '⌛ Faite votre présence tous les jours pour gagner des pièces de serveur quotidiennement'
+    },
     messageCommand: {
         style: 'flat',
-        aliases: ['presence', 'p'],
+        aliases: [
+            'presence',
+            'p',
+            'daily'
+        ],
     },
     access: {
         guild: {
-            authorizedIds: [
-                mainGuildConfig.id
-            ]
+            modules: {
+                eco: true
+            }
         }
     },
     async onInteraction(interaction) {
-        return handleCommand({
-            userId: interaction.user.id,
-            guildId: interaction.guild!.id,
-            username: interaction.user.globalName ?? interaction.user.username,
-            reply: (data) => interaction.reply(data)
+        return await interaction.reply({
+            embeds: [await buildEmbed(interaction.member)],
         });
     },
     async onMessage(message) {
-        return handleCommand({
-            userId: message.author.id,
-            guildId: message.guild!.id,
-            username: message.author.globalName ?? message.author.username,
-            reply: (data) => message.reply(data)
+        return await message.reply({
+            embeds: [await buildEmbed(message.member as GuildMember)],
         });
     }
 })

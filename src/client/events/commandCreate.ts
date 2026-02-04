@@ -1,3 +1,4 @@
+import { Event } from '@/structures'
 import {
     BaseMessageOptions,
     ChatInputCommandInteraction,
@@ -5,40 +6,47 @@ import {
     Team
 } from 'discord.js'
 
-import { Event } from '@/structures'
+import db from '@/database/db'
+import { guildModuleService } from '@/database/services'
+import {
+    GuildModuleKeys,
+    GuildModuleName,
+    PrismaUserFlags
+} from '@/database/utils'
 
-import prisma from '@/database/prisma'
-import { UserFlags } from '@/database/utils/UserFlags'
-
-import { EmbedUI } from '@/ui/EmbedUI'
+import { logger } from '@/utils'
+import { createNotifCard } from '@/ui/assets/cards/notifCard'
 
 const replyBy = async (interaction: Message | ChatInputCommandInteraction, payload: BaseMessageOptions) => {
     try {
         if (interaction instanceof ChatInputCommandInteraction) {
-            return await interaction.reply(payload);
+            return await interaction[interaction.deferred ? 'editReply' : 'reply'](payload);
         } else if (interaction instanceof Message && interaction.channel.isSendable()) {
             return await interaction.reply(payload);
         }
-    } catch {
-        console.log('ERROR SLASH COMMAND 404');
+    } catch (ex) {
+        logger.error(ex);
     }
 }
 
 export default new Event({
     name: 'commandCreate',
     async run({ events: [command, interaction, args] }) {
-        const replyAuthorizationRefused = async (content: string[] | string, title?: string) => {
+        const replyAuthorizationRefused = async (content: string[] | string) => {
             if (!Array.isArray(content)) {
-                content = [ content ];
+                content = [content];
             }
 
             return await replyBy(interaction, {
-                embeds: [
-                    EmbedUI.createMessage({
-                        color: 'red',
-                        title: `// ${title ?? "Authorization refusée"}`,
-                        description: content.join('\n'),
-                    })
+                files: [
+                    {
+                        attachment: await createNotifCard({
+                            text: `[${content}]`,
+                            fontSize: 24,
+                            theme: 'red'
+                        }),
+                        name: 'unauthorizedCard.png'
+                    }
                 ]
             });
         }
@@ -58,7 +66,7 @@ export default new Event({
                 throw new Error('No guild or no user')
             };
 
-            const userDatabase = await prisma.user.findUnique({
+            const userDatabase = await db.user.findUnique({
                 where: {
                     id: user.id
                 }
@@ -71,51 +79,36 @@ export default new Event({
             const isDeveloper = (this.client.application!.owner as Team).members.has(user.id);
 
             if (access) {
-        //         if (access.guild) {
-        //             if (access.guild?.premium && !(await guildRepository.hasFeatures(guild.id, ['PREMIUM']))) {
-        //                 return await replyError([
-        //                     `${redBulletEmoji} Commande accessible uniquement aux communautés premium`
-        //                 ]);
-        //             }
+                if (access.guild) {
+                    if (access.guild.modules) {
+                        const moduleNames = Object.keys(access.guild.modules) as GuildModuleName[];
+                        const areModulesEnabled = await guildModuleService.areEnabled(guild.id, moduleNames, 'every');
+                        if (!areModulesEnabled) {
+                            return await replyAuthorizationRefused(
+                                'Contexte invalide. Un ou plusieurs modules requis sont désactivés par le gérant du serveur.',
+                            );
+                        }
 
-        //             if (access.guild?.partner && !(await guildRepository.hasFeatures(guild.id, ['PARTNERED']))) {
-        //                 return await replyError([
-        //                     `${redBulletEmoji} Commande accessible uniquement aux communautés partenaire`
-        //                 ]);
-        //             }
+                        for (const moduleName of moduleNames) {
+                            const moduleFields = Object.keys(access.guild.modules[moduleName] as any) as GuildModuleKeys<typeof moduleName>[];
 
-        //             if (access.guild?.features && !(await guildRepository.hasFeatures(guild.id, access.guild.features))) {
-        //                 return await replyError([
-        //                     `${redBulletEmoji} Cette communauté doit posséder les fonctionnalités suivantes :`,
-        //                     access.guild.features
-        //                         .map((feature) => `${emptyEmoji}${graySubEntryEmoji} ${feature}`)
-        //                         .join('\n')
-        //                 ]);
-        //             }
+                            if (moduleFields.length === 0) continue;
 
-        //             if (access.guild.modules) {
-        //                 const moduleNames = Object.keys(access.guild.modules) as GuildModuleName[];
-        //                 const areModulesEnabled = await guildRepository.hasModulesEnabled(guild.id, moduleNames);
-        //                 const areModuleFieldsEnabled = await Promise.all(
-        //                     moduleNames.map(async (m) => {
-        //                         const fields = access.guild?.modules?.[m];
-        //                         if (!fields?.length) {
-        //                             return true;
-        //                         }
+                            const areFieldsEnabled = await guildModuleService.areSettingFieldEnabled(
+                                guild.id,
+                                moduleName,
+                                moduleFields,
+                                'every'
+                            );
 
-        //                         return await guildRepository.hasModuleConfigFieldsEnabled(guild.id, m, fields as any);
-        //                     })
-        //                 ).then((m) => m.every(Boolean));
-
-        //                 console.log(areModuleFieldsEnabled);
-
-        //                 if (!(areModulesEnabled && areModuleFieldsEnabled)) {
-        //                     return await replyError([
-        //                         `${redBulletEmoji} Un ou plusieurs modules requis sont désactivés par le gérant de cette communauté`
-        //                     ]);
-        //                 }
-        //             }
-        //         }
+                            if (!areFieldsEnabled) {
+                                return await replyAuthorizationRefused(
+                                    `Contexte invalide. Une ou plusieurs options lié à un module requis sont désactivés.`,
+                                );
+                            }
+                        }
+                    }
+                }
 
                 if (access.channel) {
                     if (
@@ -123,31 +116,31 @@ export default new Event({
                         && 'nsfw' in interaction.channel
                         && !interaction.channel.nsfw
                     ) {
-                        return await replyAuthorizationRefused(`Cette commande ne peut être utilisée que dans les salons NSFW`);
+                        return await replyAuthorizationRefused(`Contexte invalide. Salon NSFW requis.`);
                     }
                 }
 
                 if (access.user) {
                     if (access.user?.isDeveloper && !isDeveloper) {
-                        return await replyAuthorizationRefused(`Cette commande est accessible uniquement au développeur`);
+                        return await replyAuthorizationRefused(`Autorisation insuffisante. Accès développeur requis.`);
                     }
 
                     if (userDatabase && !isDeveloper) {
-                        if (access.user?.isStaff && !userDatabase.flags.has(UserFlags.STAFF)) {
-                            return await replyAuthorizationRefused(`Cette commande est accessible uniquement aux personnes ayant une haute autorité`);
+                        if (access.user?.isStaff && !userDatabase.flags.has(PrismaUserFlags.STAFF)) {
+                            return await replyAuthorizationRefused(`Accès restreint. Probabilité de succès insuffisante.`);
                         }
 
-                        if (access.user?.isBetaTester && !userDatabase.flags.has(UserFlags.BETA)) {
-                            return await replyAuthorizationRefused(`Cette commande est accessible uniquement aux bêta-testeurs`);
+                        if (access.user?.isBetaTester && !userDatabase.flags.has(PrismaUserFlags.BETA)) {
+                            return await replyAuthorizationRefused(`Accès restreint. Statut bêta requis.`);
                         }
                     }
 
                     if (access.user?.isGuildOwner && user.id !== guild.ownerId) {
-                        return await replyAuthorizationRefused(`Vous n’êtes pas le propriétaire de cette communauté`);
+                        return await replyAuthorizationRefused(`Vous n’êtes pas le propriétaire de cette serveur`);
                     }
 
                     if (access.user?.requiredPermissions && !memberPermissions?.has(access.user.requiredPermissions)) {
-                        return await replyAuthorizationRefused(`Vous n'avez pas les permissions nécessaire`);
+                        return await replyAuthorizationRefused(`Permissions insuffisantes.`);
                     }
                 }
             }
@@ -169,7 +162,15 @@ export default new Event({
             this.client.logger.error(err);
 
             return await replyBy(interaction, {
-                files: ['https://i.pinimg.com/originals/89/9b/5a/899b5a60f74635cc686a794551e3238d.gif']
+                files: [
+                    {
+                        attachment: await createNotifCard({
+                            text: '[Une anomalie a été détectée.]',
+                            theme: 'red'
+                        }),
+                        name: 'errorCard.png'
+                    }
+                ]
             });
         }
     }

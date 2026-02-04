@@ -4,12 +4,15 @@ import {
     ActivityType,
     DiscordjsErrorCodes,
     DefaultWebSocketManagerOptions,
-    Collection,
     Guild,
     TextChannel,
+    Collection,
+    ForumChannel,
+    ChannelType,
 } from 'discord.js'
 
 import {
+    CallSessionManager,
     CommandManager,
     EventManager,
 } from '@/client/managers'
@@ -21,29 +24,36 @@ import { mainGuildConfig } from '@/client/config/mainGuild'
 
 import { CustomClientEvents } from './Event'
 import { Logger } from './Logger'
+import { hubConfig } from '@/client/config/hub'
 
 export interface CustomClientMainGuildData {
     id: string;
-    reportChannelId: string;
     welcomeChannelId: string;
-    deleteLogChannelId: string,
-    updateLogChannelId: string
+}
+
+interface CustomClientSpamBufferData {
+    guildId: string;
+    lastMessageAt: number;
+    lastInterval?: number;
+    lastContent?: string;
+    messageCount: number;
 }
 
 export class CustomClient extends Client {
+    hub?: Guild & {
+        ticketChannel: ForumChannel
+    };
+
     mainGuild: Guild & {
-        reportChannel: TextChannel;
         welcomeChannel: TextChannel;
-        deleteLogChannel: TextChannel;
-        updateLogChannel: TextChannel;
     };
 
     isDatabaseConnected: boolean;
 
-    voiceSessions: Collection<string, { channelId: string; timestamp: number }>;
-
     events: EventManager;
     commands: CommandManager;
+    callSessions: CallSessionManager;
+    spamBuffer: Collection<string, CustomClientSpamBufferData>;
 
     logger: Logger;
 
@@ -81,7 +91,6 @@ export class CustomClient extends Client {
         return super.removeAllListeners(event as string);
     };
 
-
     constructor(options: ClientOptions) {
         super({
             ...options,
@@ -97,8 +106,9 @@ export class CustomClient extends Client {
 
         this.events = new EventManager(this);
         this.commands = new CommandManager(this);
+        this.callSessions = new CallSessionManager(this);
 
-        this.voiceSessions = new Collection();
+        this.spamBuffer = new Collection();
 
         this.logger = logger.use({
             prefix: (c) => c.white(`[CLIENT] <🤖>`)
@@ -164,21 +174,40 @@ export class CustomClient extends Client {
                     prefix: (c) => c.white(`[${c.cyanBright(this.user!.username)}] <🤖>`)
                 });
 
+                if (hubConfig?.guildId) {
+                    this.logger.log('🔄 » Initializing hub..');
+
+                    const hub = await this.guilds.fetch(hubConfig.guildId);
+                    if (!hub) {
+                        throw new Error(`Hub guild not found (${hubConfig.guildId})`);
+                    }
+
+                    if (!hubConfig.ticketChannelId) {
+                        throw new Error('Hub ticketChannelId is missing');
+                    }
+
+                    const ticketChannel = await hub.channels.fetch(hubConfig.ticketChannelId);
+                    if (ticketChannel?.type === ChannelType.GuildForum) {
+                        this.hub = Object.assign(hub, {
+                            ticketChannel
+                        });
+                    } else {
+                        throw new Error(`Hub ticket channel invalid (${hubConfig.ticketChannelId})`);
+                    }
+
+                    this.logger.log('✅ » Hub initialized\n');
+                } else {
+                    this.logger.log('⚠️ » Hub disabled\n');
+                }
+
                 const mainGuild = await this.guilds.fetch(mainGuildConfig.id);
 
                 this.mainGuild = Object.assign(mainGuild,
                     {
-                        reportChannel: await mainGuild.channels.fetch(mainGuildConfig.reportChannelId),
                         welcomeChannel: await mainGuild.channels.fetch(mainGuildConfig.welcomeChannelId),
-                        deleteLogChannel: await mainGuild.channels.fetch(mainGuildConfig.deleteLogChannelId),
-                        updateLogChannel: await mainGuild.channels.fetch(mainGuildConfig.updateLogChannelId),
                     }
                 ) as Guild & {
-                    reportChannel: TextChannel;
                     welcomeChannel: TextChannel;
-                    deleteLogChannel: TextChannel;
-                    updateLogChannel: TextChannel;
-
                 };
 
                 if (this.application) {

@@ -1,111 +1,113 @@
 import { SymbolsUI } from '@/ui/SymbolsUI'
-import c from 'ansi-colors'
+import pc from 'picocolors'
 
-export type LoggerTextInput = string | ((color: typeof c) => string | undefined);
+export type ColorAPI = typeof pc
+
+export type LoggerTextInput = string | ((color: ColorAPI) => string | undefined)
 
 export type LoggerOptions = {
-    prefix?: string | ((color: typeof c) => string);
+    prefix?: LoggerTextInput
 }
 
 export type LoggerBoxOptions = {
-    title?: LoggerTextInput;
-    message: LoggerTextInput;
-    bottomTitle?: LoggerTextInput;
+    title?: LoggerTextInput
+    message: LoggerTextInput
+    bottomTitle?: LoggerTextInput
 }
 
 export class Logger {
-    private prefix: string | undefined;
-
-    private format(type: string, ...message: unknown[]) {
-        const parts = [this.prefix, type, ...message].filter(Boolean);
-        console.log(...parts);
-    }
-
-    private resolveText(text?: LoggerTextInput): string | undefined {
-        if (!text) return undefined;
-        return typeof text === 'function' ? text(c) : text;
-    }
+    private prefix?: string
 
     constructor(options?: LoggerOptions) {
-        this.prefix = this.resolveText(options?.prefix);
+        this.prefix = this.resolveText(options?.prefix)
     }
 
     use(options?: LoggerOptions): Logger {
         return new Logger({
-            prefix: options?.prefix ?? this.prefix,
-        });
+            prefix: options?.prefix ?? this.prefix
+        })
+    }
+
+    private format(type: string, ...message: unknown[]) {
+        const parts = [this.prefix, type, ...message].filter(Boolean)
+        console.log(...parts)
+    }
+
+    private resolveText(text?: LoggerTextInput): string | undefined {
+        if (!text) return undefined
+        return typeof text === 'function' ? text(pc) : text
     }
 
     log(...message: unknown[]) {
-        this.format('', ...message);
+        this.format('', ...message)
     }
 
     info(...message: unknown[]) {
-        this.format(c.bold.cyan('[INFO]'), ...message);
+        this.format(pc.bold(pc.cyan('[INFO]')), ...message)
     }
 
     warn(...message: unknown[]) {
-        this.format(c.bold.yellow('[WARN]'), ...message);
+        this.format(pc.bold(pc.yellow('[WARN]')), ...message)
     }
 
     error(...message: unknown[]) {
-        this.format(c.bold.red('[ERROR]'), ...message);
+        this.format(pc.bold(pc.red('[ERROR]')), ...message)
     }
 
     success(...message: unknown[]) {
-        this.format(c.bold.green('[SUCCESS]'), ...message);
+        this.format(pc.bold(pc.green('[SUCCESS]')), ...message)
     }
 
     topBorderBox(title?: LoggerTextInput) {
-        const cornerTopLeftEmoji = c.yellow(SymbolsUI.box.cornerTopLeft);
-        const pointedStarEmoji = c.yellowBright(SymbolsUI.pointedStar);
+        const cornerTopLeft = pc.yellow(SymbolsUI.box.cornerTopLeft)
+        const star = pc.yellow(SymbolsUI.pointedStar)
 
-        const resolvedText = this.resolveText(title);
+        const resolvedText = this.resolveText(title)
 
-        const parts = [`${cornerTopLeftEmoji} ${pointedStarEmoji}`];
+        const parts = [`${cornerTopLeft} ${star}`]
         if (resolvedText) {
-            parts.push(`${resolvedText} ${pointedStarEmoji}`);
+            parts.push(`${resolvedText} ${star}`)
         }
 
-        console.log(parts.join(' '));
+        console.log(parts.join(' '))
     }
 
     borderBox(text: LoggerTextInput) {
-        const verticalEmoji = c.yellow(SymbolsUI.box.vertical);
-        const resolvedText = this.resolveText(text);
+        const vertical = pc.yellow(SymbolsUI.box.vertical)
+        const resolvedText = this.resolveText(text)
 
-        console.log(`${verticalEmoji} `, resolvedText);
+        console.log(`${vertical} ${resolvedText}`)
     }
 
     bottomBorderBox(title?: LoggerTextInput) {
-        const cornerBottomLeftEmoji = c.yellow(SymbolsUI.box.cornerBottomLeft);
-        const pointedStarEmoji = c.yellowBright(SymbolsUI.pointedStar);
+        const cornerBottomLeft = pc.yellow(SymbolsUI.box.cornerBottomLeft)
+        const star = pc.yellow(SymbolsUI.pointedStar)
 
-        const resolvedText = this.resolveText(title);
+        const resolvedText = this.resolveText(title)
 
-        const parts = [`${cornerBottomLeftEmoji} ${pointedStarEmoji}`];
+        const parts = [`${cornerBottomLeft} ${star}`]
         if (resolvedText) {
-            parts.push(`${resolvedText} ${pointedStarEmoji}`);
+            parts.push(`${resolvedText} ${star}`)
         }
 
-        console.log(parts.join(' '));
+        console.log(parts.join(' '))
     }
 
     box(options: LoggerTextInput | LoggerBoxOptions) {
-        let title: LoggerTextInput | undefined;
-        let message: LoggerTextInput;
-        let bottomTitle: LoggerTextInput | undefined;
+        let title: LoggerTextInput | undefined
+        let message: LoggerTextInput
+        let bottomTitle: LoggerTextInput | undefined
 
         if (typeof options === 'string' || typeof options === 'function') {
-            message = options;
+            message = options
         } else {
-            title = options.title;
-            message = options.message;
-            bottomTitle = options.bottomTitle;
+            title = options.title
+            message = options.message
+            bottomTitle = options.bottomTitle
         }
 
-        this.topBorderBox(title);
-        this.borderBox(message);
-        this.bottomBorderBox(bottomTitle);
+        this.topBorderBox(title)
+        this.borderBox(message)
+        this.bottomBorderBox(bottomTitle)
     }
 }
