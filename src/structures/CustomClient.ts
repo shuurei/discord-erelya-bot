@@ -24,7 +24,6 @@ import { mainGuildConfig } from '@/client/config/mainGuild'
 
 import { CustomClientEvents } from './Event'
 import { Logger } from './Logger'
-import { hubConfig } from '@/client/config/hub'
 
 export interface CustomClientMainGuildData {
     id: string;
@@ -41,7 +40,8 @@ interface CustomClientSpamBufferData {
 
 export class CustomClient extends Client {
     hub?: Guild & {
-        ticketChannel: ForumChannel
+        ticketChannel?: ForumChannel;
+        heartLogsChannel?: TextChannel;
     };
 
     mainGuild: Guild & {
@@ -174,25 +174,42 @@ export class CustomClient extends Client {
                     prefix: (c) => c.white(`[${c.cyanBright(this.user!.username)}] <🤖>`)
                 });
 
-                if (hubConfig?.guildId) {
+                if (process.env.HUB_GUILD_ID) {
                     this.logger.log('🔄 » Initializing hub..');
 
-                    const hub = await this.guilds.fetch(hubConfig.guildId);
+                    const hub = await this.guilds.fetch(process.env.HUB_GUILD_ID);
                     if (!hub) {
-                        throw new Error(`Hub guild not found (${hubConfig.guildId})`);
+                        throw new Error(`❌ » Hub guild not found (${process.env.HUB_GUILD_ID})`);
                     }
 
-                    if (!hubConfig.ticketChannelId) {
-                        throw new Error('Hub ticketChannelId is missing');
-                    }
-
-                    const ticketChannel = await hub.channels.fetch(hubConfig.ticketChannelId);
-                    if (ticketChannel?.type === ChannelType.GuildForum) {
-                        this.hub = Object.assign(hub, {
-                            ticketChannel
-                        });
+                    if (process.env.HUB_TICKET_CHANNEL_ID) {
+                        const ticketChannel = await hub.channels.fetch(process.env.HUB_TICKET_CHANNEL_ID);
+                        if (ticketChannel?.type === ChannelType.GuildForum) {
+                            this.hub = Object.assign(hub, {
+                                ticketChannel
+                            });
+                        
+                            this.logger.log('✅ » Hub ticket channel initialized');
+                        } else {
+                            throw new Error(`❌ » Hub ticket channel invalid (${process.env.HUB_TICKET_CHANNEL_ID})`);
+                        }
                     } else {
-                        throw new Error(`Hub ticket channel invalid (${hubConfig.ticketChannelId})`);
+                        this.logger.log(`⚠️ » Hub Ticket Channel skipped`)
+                    }
+
+                    if (process.env.HUB_HEART_LOGS_CHANNEL_ID) {
+                        const heartLogsChannel = await hub.channels.fetch(process.env.HUB_HEART_LOGS_CHANNEL_ID);
+                        if (heartLogsChannel?.type === ChannelType.GuildText) {
+                            this.hub = Object.assign(hub, {
+                                heartLogsChannel
+                            });
+
+                            this.logger.log('✅ » Hub heart logs initialized');
+                        } else {
+                            throw new Error(`❌ » Hub heart logs channel invalid (${process.env.HUB_HEART_LOGS_CHANNEL_ID})`);
+                        }
+                    } else {
+                        this.logger.log(`⚠️ » Hub Heart Logs skipped`)
                     }
 
                     this.logger.log('✅ » Hub initialized\n');

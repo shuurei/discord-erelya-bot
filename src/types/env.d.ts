@@ -10,6 +10,10 @@ declare global {
             // CLIENT
             DEBUG?: string;
             TOKEN: string;
+            // HUB
+            HUB_GUILD_ID?: string;
+            HUB_TICKET_CHANNEL_ID?: string;
+            HUB_HEART_LOGS_CHANNEL_ID?: string;
             // DISCORD
             CLIENT_ID: string;
             CLIENT_TOKEN?: string;

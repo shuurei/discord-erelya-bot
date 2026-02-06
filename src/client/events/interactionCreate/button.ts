@@ -10,7 +10,6 @@ import {
 import { BlacklistStatus } from '@/database/core/enums'
 import { blacklistDerogationService, blacklistService } from '@/database/services'
 
-import { hubConfig } from '@/client/config/hub'
 import { ContainerUI, EmbedUI } from '@/ui'
 
 import { applicationEmojiHelper } from '@/helpers'
@@ -28,7 +27,7 @@ export default new Event({
         const channel = interaction.channel;
 
         // Hub Ticket
-        if (channel?.isThread() && channel.parent?.id === hubConfig.ticketChannelId) {
+        if (channel?.isThread() && channel.parent?.id === this.client.hub?.ticketChannel?.id) {
             const blacklist = await blacklistService.findByThreadId(channel.id);
 
             if (!blacklist) {

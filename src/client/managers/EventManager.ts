@@ -3,6 +3,7 @@ import { pathToFileURL } from 'url'
 
 import logger from '@/utils/logger'
 import { CustomClient, Event } from '@/structures'
+import { EmbedUI } from '@/ui'
 
 export interface LoadEventManagerOptions {
     directory: string;
@@ -10,7 +11,7 @@ export interface LoadEventManagerOptions {
 
 export class EventManager {
     client: CustomClient;
-    
+
     constructor(client: CustomClient) {
         this.client = client;
     }
@@ -33,10 +34,38 @@ export class EventManager {
                     const newThis = Object.assign(mod, {
                         client: this.client
                     });
-    
+
                     return await mod.run.call(newThis, { events: args });
                 } catch (ex) {
-                    logger.error(ex);
+                    if (this.client.hub && this.client.hub?.heartLogsChannel) {
+                        logger.error(ex);
+
+                        const potentialGuild = args[0]?.guild;
+                        const potentialUser = args[0]?.user;
+
+                        await this.client.hub.heartLogsChannel.send({
+                            embeds: [
+                                EmbedUI.create({
+                                    color: 'blue',
+                                    title: `⚡ Event Error`,
+                                    description: [
+                                        `- Event: \`${mod.name}\``,
+                                        potentialGuild && [`- Guild`,
+                                        `  - \`${potentialGuild?.name}\``,
+                                        `  - \`${potentialGuild?.id}\``],
+                                        potentialUser && [`- Author`,
+                                        `  - \`${potentialUser?.username}\``,
+                                        `  - \`${potentialUser?.id}\``],
+                                    ].filter(Boolean).flat().join(`\n`)
+                                }),
+                                EmbedUI.create({
+                                    color: 'red',
+                                    title: '🐞 Stack',
+                                    description: `>>> ${ex?.stack}`
+                                })
+                            ],
+                        });
+                    }
                 }
             });
 
