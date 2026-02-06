@@ -1,9 +1,8 @@
-import { Collection } from 'discord.js'
 import { Event } from '@/structures'
 
-import { startAllJobs } from '@/client/jobs/index.js'
 import prisma from '@/database/db'
-import { createNotifCard } from '@/ui/assets/cards/notifCard'
+import { startAllJobs } from '@/client/jobs/index.js'
+import { createNotifCard } from '@/ui/assets/cards/notifCard';
 
 export default new Event({
     once: true,
@@ -11,9 +10,8 @@ export default new Event({
     async run() {
         this.client.logger.log('✅ » Successfully logged in !\n');
 
-        const lunaria = this.client.guilds.cache.get('1280087771540623413')
-        if (lunaria && process.env.ENV === 'PROD') {
-            lunaria.members.cache.get('1175882929826713791')?.send({
+        if (this.client.hub && this.client.hub?.heartLogsChannel) {
+            await this.client.hub.heartLogsChannel.send({
                 files: [
                     {
                         attachment: await createNotifCard({
@@ -22,7 +20,7 @@ export default new Event({
                         name: 'info.png'
                     }
                 ]
-            })
+            });
         }
 
         try {
@@ -34,4 +32,4 @@ export default new Event({
 
         await startAllJobs();
     }
-})
+});

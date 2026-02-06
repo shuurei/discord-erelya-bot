@@ -16,6 +16,7 @@ import {
 
 import { logger } from '@/utils'
 import { createNotifCard } from '@/ui/assets/cards/notifCard'
+import { EmbedUI } from '@/ui'
 
 const replyBy = async (interaction: Message | ChatInputCommandInteraction, payload: BaseMessageOptions) => {
     try {
@@ -50,6 +51,9 @@ export default new Event({
                 ]
             });
         }
+
+        const isSlash = interaction instanceof ChatInputCommandInteraction;
+        const isMessage = interaction instanceof Message;
 
         try {
             const access = command.access ?? null;
@@ -126,7 +130,7 @@ export default new Event({
                     }
 
                     if (userDatabase && !isDeveloper) {
-                        if (access.user?.isStaff && !userDatabase.flags.has(PrismaUserFlags.STAFF)) {
+                        if (access.user?.isStaff && !userDatabase.flags.has(PrismaUserFlags.CLEANER)) {
                             return await replyAuthorizationRefused(`Accès restreint. Probabilité de succès insuffisante.`);
                         }
 
@@ -146,13 +150,13 @@ export default new Event({
             }
 
             if (
-                interaction instanceof ChatInputCommandInteraction
+                isSlash
                 && command.onInteraction
                 && interaction.inCachedGuild()
             ) {
                 return await command.onInteraction(interaction);
             } else if (
-                interaction instanceof Message
+                isMessage
                 && command.onMessage
                 && interaction.inGuild()
             ) {
@@ -160,6 +164,31 @@ export default new Event({
             }
         } catch (err) {
             this.client.logger.error(err);
+
+            if (this.client.hub && this.client.hub?.heartLogsChannel) {
+                await this.client.hub.heartLogsChannel.send({
+                    embeds: [
+                        EmbedUI.create({
+                            color: 'blue',
+                            title: `🌐 Command Error`,
+                            description: [
+                                `- Command Type: \`${isSlash ? 'Slash' : isMessage ? 'Message' : 'Unknown'}\``,
+                                `- Guild`,
+                                `  - \`${interaction.guild?.name}\``,
+                                `  - \`${interaction.guild?.id}\``,
+                                `- Author`,
+                                `  - \`${interaction.member?.user?.username}\``,
+                                `  - \`${interaction.member?.user?.id}\``,
+                            ].join(`\n`)
+                        }),
+                        EmbedUI.create({
+                            color: 'red',
+                            title: '🐞 Stack',
+                            description: `>>> ${err?.stack}`
+                        })
+                    ],
+                });
+            }
 
             return await replyBy(interaction, {
                 files: [
