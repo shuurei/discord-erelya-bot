@@ -19,6 +19,7 @@ export interface CustomClientEvents extends ClientEvents {
     databaseReady: [...args: any],
     blacklistCreate: [BlacklistModel, Guild, User, User],
     blacklistTreated: [BlacklistModel],
+    hubReady: [Guild]
 };
 
 export interface EventRunOptions<Event extends keyof CustomClientEvents> {
