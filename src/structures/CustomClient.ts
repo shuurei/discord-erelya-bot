@@ -212,6 +212,7 @@ export class CustomClient extends Client {
                         this.logger.log(`⚠️ » Hub Heart Logs skipped`)
                     }
 
+                    this.emit('hubReady', hub);
                     this.logger.log('✅ » Hub initialized\n');
                 } else {
                     this.logger.log('⚠️ » Hub disabled\n');
