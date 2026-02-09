@@ -138,7 +138,9 @@ export default new Command({
         }
     },
     async onInteraction(interaction) {
-        return await interaction.reply({
+        await interaction.deferReply();
+
+        return await interaction.editReply({
             embeds: [await buildEmbed(interaction.member)],
         });
     },
