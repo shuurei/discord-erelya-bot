@@ -38,6 +38,8 @@ interface CustomClientSpamBufferData {
     messageCount: number;
 }
 
+import pkg from '@pkg'
+
 export class CustomClient extends Client {
     hub?: Guild & {
         ticketChannel?: ForumChannel;
@@ -115,9 +117,7 @@ export class CustomClient extends Client {
         });
 
         this.reflexions = [
-            "thinking.. or maybe chilling ?",
-            "avoiding your notifications",
-            "just vibing in the code",
+            `v${pkg.version}`,
             "i'm awake",
             "running on caffeine & chaos",
             "loading sarcasm module",
@@ -127,17 +127,11 @@ export class CustomClient extends Client {
             "hello world, again.. and again",
             "debugging life, one line at a time",
             "sending virtual high-fives",
-            "chatting with humans 101",
-            "sometimes i hack boredom",
-            "glitching through the void",
-            "just a few bytes of fun",
             "in the void, observing",
             "echoes of the code",
             "existential.exe running",
             "i ❤ Radiohead",
             "predicting chaos.. mostly correctly",
-            "inside your network, silently",
-            "watching the logs.. silently",
             "ca-n.. i.. can i love ?",
             "404 social life not found",
             "compiling memes.. almost done",
