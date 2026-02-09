@@ -149,9 +149,11 @@ export default new Command({
         ]
     },
     async onInteraction(interaction) {
+        await interaction.deferReply();
+
         const member = interaction.options.getMember('member') ?? interaction.member;
 
-        return interaction.reply({
+        return interaction.editReply({
             flags: MessageFlags.IsComponentsV2,
             allowedMentions: {},
             components: [await buildContainer(member)]
