@@ -1,4 +1,4 @@
-import db from '@/database/db'
+import db from '@/database/data-source'
 
 import {
     MemberVaultCreateInput,
@@ -9,7 +9,6 @@ import {
     MemberVaultUpsertArgs,
 } from '@/database/core/models'
 import { memberService } from './member'
-import { MemberVaultCapacityTier } from '../core/enums'
 
 export type MemberVaultCreateInputWithoutUserAndGuild = Omit<MemberVaultCreateInput, 'member'>
 

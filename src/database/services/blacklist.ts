@@ -1,5 +1,4 @@
-import db from '@/database/db'
-import { BlacklistStatus } from '@/database/core/enums'
+import db from '@/database/data-source'
 import { BlacklistCreateManyInput, BlacklistUpdateInput, BlacklistUpdateManyMutationInput } from '../core/models'
 
 class BlacklistService {

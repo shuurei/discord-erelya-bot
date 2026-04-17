@@ -14,8 +14,6 @@ export default defineConfig({
     clean: true,
     external: [
         '@napi-rs/canvas',
-        '@prisma/client',
-        'prisma',
         'discord.js',
     ],
     define: {

@@ -6,7 +6,6 @@ import {
     MessageFlags
 } from 'discord.js'
 
-import { BlacklistStatus } from '@/database/core/enums'
 import { blacklistDerogationService, blacklistService } from '@/database/services'
 
 import { ContainerUI } from '@/ui'

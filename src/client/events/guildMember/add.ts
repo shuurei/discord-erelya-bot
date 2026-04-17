@@ -2,7 +2,6 @@ import { Event } from '@/structures'
 import { MessageFlags } from 'discord.js'
 
 import { blacklistDerogationService, blacklistService } from '@/database/services'
-import { BlacklistStatus } from '@/database/core/enums'
 
 import { ContainerUI, EmbedUI } from '@/ui'
 import {

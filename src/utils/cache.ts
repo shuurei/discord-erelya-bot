@@ -32,8 +32,8 @@ export const cache = {
         try {
             const content = fs.readFileSync(filePath, 'utf-8');
             return JSON.parse(content) as T;
-        } catch (e) {
-            this.logger.error(`Failed to parse cache "${key}":`, e);
+        } catch (err) {
+            this.logger.error(`Failed to parse cache "${key}":`, err as any);
             return null;
         }
     },

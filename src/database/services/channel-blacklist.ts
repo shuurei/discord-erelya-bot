@@ -1,8 +1,4 @@
-import db from '@/database/db'
-
-import { GuildCreateOrConnectWithoutMembersInput } from '@/database/core/models'
-
-import { BlacklistScope } from '@/database/core/enums'
+import db from '@/database/data-source'
 
 interface ChannelBlacklistWhere {
     guildId: string;

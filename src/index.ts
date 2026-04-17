@@ -1,3 +1,5 @@
+await import('reflect-metadata');
+
 import 'dotenv/config'
 import './helpers/extends/String'
 import './helpers/extends/Math'
@@ -7,7 +9,6 @@ process.title = `${pkg.name.toUpperCase()} - Terminal`
 
 import pkg from '@pkg'
 import { version as djsVersion } from 'discord.js'
-import { Prisma } from './database/core/client'
 
 import logger from './utils/logger'
 import client from './client/instance'
@@ -54,10 +55,6 @@ logger.list([
     {
         label: 'NodeJs',
         value: process.version
-    },
-    {
-        label: 'Prisma',
-        value: `v${Prisma.prismaVersion.client}`
     }
 ])
 logger.header(({ purpleBright }) => purpleBright('✦ OPERATING SYSTEM ✦'));

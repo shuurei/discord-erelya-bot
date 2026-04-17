@@ -1,7 +1,7 @@
 import { Command } from '@/structures/Command'
 import { GuildMember } from 'discord.js'
 
-import db from '@/database/db'
+import db from '@/database/data-source'
 
 import { EmbedUI } from '@/ui/EmbedUI'
 

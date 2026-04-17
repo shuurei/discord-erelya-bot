@@ -53,7 +53,7 @@ export class Logger {
         ) {
             return this.formatters[formatter as Exclude<keyof LoggerColors, 'custom' | 'gradient'>];
         } else {
-            return (text: string) => this.formatters.custom(formatter, text);
+            return (text) => this.formatters.custom(formatter, text as string);
         }
     }
 
@@ -90,10 +90,10 @@ export class Logger {
 
         this.formatters = {
             ...pc,
-            orange: (text: string) => this.applyCustomColor('#ffbb62', text),
-            orangeBright: (text: string) => this.applyCustomColor('#ffc983', text),
-            purple: (text: string) => this.applyCustomColor('#5053ff', text),
-            purpleBright: (text: string) => this.applyCustomColor('#bc8fff', text),
+            orange: (text) => this.applyCustomColor('#ffbb62', text as string),
+            orangeBright: (text) => this.applyCustomColor('#ffc983', text as string),
+            purple: (text) => this.applyCustomColor('#5053ff', text as string),
+            purpleBright: (text) => this.applyCustomColor('#bc8fff', text as string),
             custom: (color: ColorInputArgs, text: string) => this.applyCustomColor(color, text),
             gradient: (startColor: ColorInputArgs, endColor: ColorInputArgs, text: string) => this.applyGradientColor(startColor, endColor, text)
         };

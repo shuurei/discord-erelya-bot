@@ -8,7 +8,7 @@ import {
     MessageReplyOptions
 } from 'discord.js'
 
-import db from '@/database/db'
+import db from '@/database/data-source'
 import { memberService } from '@/database/services/member'
 
 import { createNotifCard } from '@/ui/assets/cards/notifCard'

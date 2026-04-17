@@ -1,7 +1,7 @@
 import { ApplicationCommandOptionType, MessageFlags } from 'discord.js'
 import { Command } from '@/structures/Command'
 
-import db from '@/database/db'
+import db from '@/database/data-source'
 import { guildModuleService, memberService } from '@/database/services'
 
 import { createCooldown, formatTimeLeft } from '@/utils'
