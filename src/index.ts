@@ -1,27 +1,20 @@
-await import('reflect-metadata');
-
 import 'dotenv/config'
-import './helpers/extends/String'
-import './helpers/extends/Math'
+await import('reflect-metadata')
 
-const env = process.env.ENV;
-process.title = `${pkg.name.toUpperCase()} - Terminal`
-
-import pkg from '@pkg'
+import os from 'os'
+import path from 'path'
+import { GlobalFonts } from '@napi-rs/canvas'
 import { version as djsVersion } from 'discord.js'
 
-import logger from './utils/logger'
-import client from './client/instance'
+import { env } from './utils'
+import client from './client'
+import { logger } from './core'
 
-import { GlobalFonts } from '@napi-rs/canvas'
-
-import path from 'path'
-import os from 'os'
+import pkg from '@pkg'
 
 GlobalFonts.registerFromPath(path.join(
     process.cwd(),
     'src',
-    'ui',
     'assets',
     'fonts',
     'Quantico-Bold.ttf'
@@ -42,11 +35,13 @@ const ASCII_LOGO = [
 
 logger.defaultMaxLineLength = ASCII_LOGO[1].length;
 
+process.title = `${pkg.name.toUpperCase()} - Terminal`
+
 logger.log(({ gradient }) =>
     ASCII_LOGO.map((line) => gradient('#5053ff', '#9650ff', line)).join('\n')
 );
 
-logger.header(({ custom }) => custom(env === 'DEV' ? '#ff8f8f' : env === 'PROD' ? '#8fffab' : '#ffe18f', `✦ ${env} - v${pkg.version} ✦`));
+logger.header(({ custom }) => custom(env.isDev ? '#ff8f8f' : env.isProd ? '#8fffab' : '#ffe18f', `✦ ${env.STAGE} - v${pkg.version} ✦`));
 logger.list([
     {
         label: 'DiscordJs',
@@ -61,11 +56,11 @@ logger.header(({ purpleBright }) => purpleBright('✦ OPERATING SYSTEM ✦'));
 logger.list([
     {
         label: 'Type',
-        value: os.version()
+        value: os.type()
     },
     {
         label: 'Version',
-        value: os.release()
+        value: os.version()
     },
 ]);
 

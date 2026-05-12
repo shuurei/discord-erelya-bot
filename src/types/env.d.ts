@@ -1,12 +1,12 @@
 import { NodeEnv } from './nodeEnv'
 
-export type NodeEnv = 'DEV' | 'PROD';
+export type StageType = 'DEV' | 'PROD'
 
 declare global {
     namespace NodeJS {
         interface ProcessEnv {
-            PREFIX: string;
-            ENV: NodeEnv;
+            DEFAULT_PREFIX: string;
+            STAGE: StageType;
             // CLIENT
             DEBUG?: string;
             TOKEN: string;

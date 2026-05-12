@@ -1,0 +1,348 @@
+import { Event, CommandMessageStyle } from '@/core'
+import { Events } from 'discord.js'
+import { env } from '@/utils'
+
+export default new Event({
+    name: Events.MessageCreate,
+    async run({ events: [message] }) {
+        const guild = message.guild;
+        const member = message.member;
+
+        if (message.author.bot || !guild || !member) return;
+
+        const prefixes = [
+            process.env.DEFAULT_PREFIX,
+            `system ${env.isDev ? 'dev ' : ''}call`,
+            `sys ${env.isDev ? 'dev ' : ''}call`,
+        ];
+
+        const usedPrefix = prefixes.find((prefix) => message.content.startsWith(prefix));
+        if (usedPrefix) {
+            const args = message.content
+                .slice(usedPrefix.length)
+                .trim()
+                .split(/\s+/);
+
+            const command = this.client.commands.resolveMessageCommand(args);
+            if (!command || (
+                command.access?.guild?.authorizedIds
+                && !command.access.guild.authorizedIds.includes(message.guild.id)
+            )) return;
+
+            if (command.messageCommand.style === CommandMessageStyle.SLASH_COMMAND) {
+                args.splice(0, command.structure.message!.parts!.length + 1);
+            } else {
+                args.splice(0, 1);
+            }
+
+            return this.client.emit('commandCreate', {
+                command,
+                messageOrInteraction: message,
+                args
+            });
+        }
+
+        // if (this.client.mainGuild?.id === guildId) {
+        //     if (process.env.ENV === 'PROD' && channelsAutomaticThread.includes(message.channel.id)) {
+        //         if (message.attachments.size > 0) {
+        //             return await message.startThread({
+        //                 name: `Discussion avec ${message.author.username}`,
+        //             });
+        //         } else {
+        //             return await message.delete();
+        //         }
+        //     }
+        // };
+
+        // // if (!(messageStartsWithPrefix || channelScopeBlacklist.MESSAGE)) {
+        // await MemberService.incrementMessageCount({ userId, guildId });
+
+        // const [
+        //     userDatabase,
+        //     guildDatabase,
+        //     guildEcoModule,
+        //     guildLevelModule,
+        //     guildEventModule,
+        //     guildQuestModule
+        // ] = await Promise.all([
+        //     userService.findById(userId),
+        //     guildService.findById(guildId),
+        //     guildModuleService.findById({ guildId, moduleName: 'eco' }),
+        //     guildModuleService.findById({ guildId, moduleName: 'level' }),
+        //     guildModuleService.findById({ guildId, moduleName: 'event' }),
+        //     guildModuleService.findById({ guildId, moduleName: 'quest' })
+        // ]);
+
+        // if (guildEventModule?.isActive && guildEventModule.settings) {
+        //     const { settings } = guildEventModule;
+
+        //     const { isActive } = createCooldown(
+        //         guildDatabase?.lastEventAt,
+        //         guildEventModule.settings.randomEventCooldownMinutes * 60 * 1000
+        //     );
+
+        //     if (!isActive && (Math.random() < settings.randomEventChance)) {
+        //         const chance = Math.random();
+
+        //         if (
+        //             settings.isCoinEventEnabled
+        //             && (chance < settings.coinsChance)
+        //         ) {
+        //             await guildService.setLastEventAt(guild.id);
+        //             const randomCoins = randomNumber(settings.coinsMinGain, settings.coinsMaxGain);
+
+        //             const buttons = [
+        //                 createButton({
+        //                     color: 'gray',
+        //                     label: `Prendre la bourse abandonnée`,
+        //                     customId: 'take'
+        //                 }),
+        //             ];
+
+        //             if (Math.random() < 0.5) {
+        //                 buttons.push(createButton({
+        //                     color: 'gray',
+        //                     label: `Inspecter la zone`,
+        //                     customId: 'inspect'
+        //                 }));
+        //             }
+
+        //             const scenarioNumber = Math.floor(Math.random() * 1000);
+
+        //             const msg = await message.channel.send({
+        //                 files: [
+        //                     {
+        //                         attachment: await createNotifCard({
+        //                             text: `[Scénario #${scenarioNumber} - Alors que vous marchez dans la ville, vous remarquez une bourse abandonnée au sol.]`,
+        //                             fontSize: 20
+        //                         }),
+        //                         name: 'event.png'
+        //                     }
+        //                 ],
+        //                 components: [
+        //                     createActionRow(buttons)
+        //                 ]
+        //             });
+
+        //             try {
+        //                 const i = await msg.awaitMessageComponent({ time: 30_000 });
+
+        //                 let coinsGained = randomCoins;
+        //                 let description = '';
+
+        //                 const RNG = Math.random();
+
+        //                 if (RNG < 0.1) {
+        //                     coinsGained = 0;
+        //                     description = `${i.user.username} décide de prendre la bourse, mais il n'y avait rien à l'intérieur.`;
+        //                 } else if (i.customId === 'take') {
+        //                     description = `${i.user.username} décide de prendre la bourse abandonnée et de l'ouvrir. À l'intérieur, vous trouvez ${coinsGained.toLocaleString('en')} pièces.`;
+        //                 } else if (i.customId === 'inspect') {
+        //                     if (RNG < 0.4) {
+        //                         coinsGained += Math.floor(coinsGained * 0.25);
+        //                         description = `${i.user.username} inspecte et aide la grand-mère qui avait perdu la bourse. Vous gagnez un bonus et obtenez **${coinsGained.toLocaleString('en')} pièces.`;
+        //                     } else {
+        //                         description = `${i.user.username} inspecte les alentours mais ne voyez personne. Vous ouvrez la bourse et découvrez ${coinsGained.toLocaleString('en')} pièces.`;
+        //                     }
+        //                 }
+
+        //                 await memberService.addGuildCoins({ guildId, userId: i.user.id }, coinsGained);
+
+        //                 await i.update({
+        //                     files: [
+        //                         {
+        //                             attachment: await createNotifCard({
+        //                                 text: `Scénario #${scenarioNumber} - ${description}`,
+        //                                 fontSize: 18
+        //                             }),
+        //                             name: 'response.png'
+        //                         }
+        //                     ],
+        //                     components: []
+        //                 });
+        //             } catch {
+        //                 await guildService.setLastEventAt(guild.id, null);
+        //                 if (msg.deletable) {
+        //                     await msg.delete();
+        //                 }
+        //             }
+        //         } else if (
+        //             settings.isXpEventEnabled
+        //             && (chance < settings.xpChance)
+        //         ) {
+        //             await guildService.setLastEventAt(guild.id);
+        //             const randomXp = randomNumber(settings.xpMinGain, settings.xpMaxGain);
+
+        //             const buttons = [
+        //                 createButton({
+        //                     color: 'gray',
+        //                     label: 'Lire le grimoire',
+        //                     customId: 'read'
+        //                 })
+        //             ];
+
+        //             if (Math.random() < 0.7) {
+        //                 buttons.push(createButton({
+        //                     color: 'gray',
+        //                     label: 'Lire attentivement',
+        //                     customId: 'focus'
+        //                 }));
+        //             }
+
+        //             const scenarioNumber = Math.floor(Math.random() * 1000);
+
+        //             const msg = await message.channel.send({
+        //                 files: [
+        //                     {
+        //                         attachment: await createNotifCard({
+        //                             text: `[Scénario #${scenarioNumber} - Un ancien grimoire est posé sur un banc.]`,
+        //                             fontSize: 20
+        //                         }),
+        //                         name: 'event.png'
+        //                     }
+        //                 ],
+        //                 components: [
+        //                     createActionRow(buttons)
+        //                 ]
+        //             });
+
+        //             try {
+        //                 const i = await msg.awaitMessageComponent({ time: 30_000 });
+
+        //                 let xpGained = randomXp;
+        //                 let description = '';
+
+        //                 const RNG = Math.random();
+
+        //                 if (RNG < 0.1) {
+        //                     xpGained = 0;
+        //                     description = `${i.user.username} ouvre le grimoire, mais les arcanes restent impénétrables.`;
+        //                 } else if (i.customId === 'read') {
+        //                     description = `${i.user.username} feuillette le grimoire. D'anciens secrets se révèlent, et ${xpGained.toLocaleString('en')} XP sont acquis.`;
+        //                 } else if (i.customId === 'focus') {
+        //                     if (RNG < 0.4) {
+        //                         xpGained += Math.floor(xpGained * 0.25);
+        //                         description = `${i.user.username} plonge dans la lecture attentive du grimoire. Des passages cachés apparaissent, accordant ${xpGained.toLocaleString('en')} XP supplémentaires.`;
+        //                     } else {
+        //                         description = `${i.user.username} médite sur les runes du grimoire, discernant quelques secrets. ${xpGained.toLocaleString('en')} XP sont gagnés.`;
+        //                     }
+        //                 }
+
+        //                 await handleMemberCheckLevelUp({
+        //                     member: guild.members.cache.get(i.user.id),
+        //                     channel: message.channel,
+        //                     xpGain: xpGained
+        //                 });
+
+        //                 await i.update({
+        //                     files: [
+        //                         {
+        //                             attachment: await createNotifCard({
+        //                                 text: `Scénario #${scenarioNumber} - ${description}`,
+        //                                 fontSize: 18
+        //                             }),
+        //                             name: 'response.png'
+        //                         }
+        //                     ],
+        //                     components: []
+        //                 });
+        //             } catch {
+        //                 await guildService.setLastEventAt(guild.id, null);
+        //                 if (msg.deletable) {
+        //                     await msg.delete();
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+
+        // const guildBoostElapsedProgress = timeElapsedFactor(message?.member?.premiumSince, 7);
+        // const tagBoostElapsedProgress = timeElapsedFactor(userDatabase?.tagAssignedAt, 14);
+
+        // if (guildEcoModule?.isActive && !channelScopeBlacklist.ECONOMY) {
+        //     const { settings } = guildEcoModule;
+
+        //     if (settings?.guildPointsFromMessageEnabled) {
+        //         if (Math.random() < settings.messageChance) {
+        //             const maxGain = settings.messageMaxGain;
+        //             const minGain = settings.messageMinGain;
+
+        //             // Penalty
+        //             const spamFactor = factor(userSpamData?.messageCount, (userSpamData?.messageCount ?? 0) / 5);
+
+        //             // Bonus
+        //             const guildBoostFactor = factor(settings.boosterFactor, guildBoostElapsedProgress * settings.boosterFactor);
+        //             const tagBoostFactor = factor(settings.tagSupporterFactor, tagBoostElapsedProgress * settings.tagSupporterFactor);
+
+        //             const bonusFactor = tagBoostFactor + guildBoostFactor;
+
+        //             const randomCoins = Math.floor(randomNumber(minGain, maxGain) * (1 + (bonusFactor)) * (1 - spamFactor));
+
+        //             if (randomCoins > 0) {
+        //                 await memberService.addGuildCoins({
+        //                     userId,
+        //                     guildId,
+        //                 }, randomCoins);
+        //             }
+        //         }
+        //     }
+        // }
+
+        // if (guildLevelModule?.isActive && !channelScopeBlacklist.LEVEL) {
+        //     const { settings } = guildLevelModule;
+
+        //     if (settings?.isXpFromMessageEnabled && Math.random() < settings.messageChance) {
+        //         const maxGain = 125;
+        //         const minGain = 75;
+
+        //         // Penalty
+        //         const spamFactor = factor(userSpamData?.messageCount, (userSpamData?.messageCount ?? 0) / 5);
+
+        //         // Bonus
+        //         const guildBoostFactor = factor(settings.boosterFactor, guildBoostElapsedProgress * settings.boosterFactor);
+        //         const tagBoostFactor = factor(settings.tagSupporterFactor, tagBoostElapsedProgress * settings.tagSupporterFactor);
+
+        //         const bonusFactor = tagBoostFactor + guildBoostFactor;
+
+        //         const randomXP = Math.floor(
+        //             randomNumber(minGain, maxGain) * (1 + bonusFactor) * (1 - spamFactor)
+        //         );
+
+        //         if (randomXP > 0) {
+        //             await handleMemberCheckLevelUp({
+        //                 member: message.member,
+        //                 channel: message.channel,
+        //                 xpGain: randomXP
+        //             });
+        //         }
+        //     }
+        // }
+
+        // if (
+        //     guildQuestModule?.isActive
+        //         && !channelScopeBlacklist.QUEST
+        //         && guildQuestModule.settings?.useAntiSpam ? (userSpamData?.messageCount ?? 0) <= 8 : true
+        // ) {
+        //     const quest = await handleMemberDailyQuestSync({
+        //         userId,
+        //         guildId
+        //     }, message.guild.preferredLocale);
+
+        //     if (quest && !quest.isClaimed && quest.messagesSentTarget && (quest.messagesSentTarget != quest.messagesSentProgress)) {
+        //         const newQuest = await memberDailyQuestService.updateOrCreate({
+        //             userId,
+        //             guildId,
+        //         }, {
+        //             messagesSentProgress: quest.messagesSentProgress + 1
+        //         });
+
+        //         await handleMemberDailyQuestNotify({
+        //             userId,
+        //             channel: message.channel,
+        //             oldQuest: quest,
+        //             newQuest
+        //         });
+        //     }
+        // }
+    }
+});

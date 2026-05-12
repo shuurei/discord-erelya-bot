@@ -14,6 +14,7 @@
         "experimentalDecorators": true,
         "strictPropertyInitialization": false,
         "allowJs": true,
+        "rootDir": ".",
         "outDir": "build",
         "paths": {
             "@/*": [ "./src/*" ],

@@ -1,38 +1,23 @@
+import { createCanvas, loadImage, SKRSContext2D, Path2D } from '@napi-rs/canvas'
 import chroma from 'chroma-js'
-import {
-    createCanvas,
-    loadImage,
-    SKRSContext2D,
-    Path2D
-} from '@napi-rs/canvas'
 
 import { isEmoji } from './string'
+import { clamp } from './math'
 
-interface GetDominantColorBaseOptions {
+export interface GetDominantColorOptions {
     minLuminance?: number;
+    maxLuminance?: number;
+    hex?: boolean;
 }
 
-interface GetDominantColorRGBOptions extends GetDominantColorBaseOptions {
-    returnRGB?: true;
-}
+export const getDominantColor = async <T extends GetDominantColorOptions>(imgURL: string, options?: T) => {
+    const { hex = false, minLuminance = 0.4, maxLuminance = 0.8 } = options ?? {}
 
-interface GetDominantColorHexOptions extends GetDominantColorBaseOptions {
-    returnRGB: false;
-}
-
-export async function getDominantColor(imgURL: string, options?: GetDominantColorRGBOptions): Promise<number>;
-export async function getDominantColor(imgURL: string, options: GetDominantColorHexOptions): Promise<string>;
-export async function getDominantColor(
-    imgURL: string,
-    {
-        returnRGB = true,
-        minLuminance = 0.4
-    }: GetDominantColorRGBOptions | GetDominantColorHexOptions = {}
-): Promise<number | string> {
     try {
-        const img = await loadImage(imgURL)
-        const canvas = createCanvas(img.width, img.height)
-        const ctx = canvas.getContext('2d')
+        const img = await loadImage(imgURL);
+
+        const canvas = createCanvas(img.width, img.height);
+        const ctx = canvas.getContext('2d');
 
         ctx.drawImage(img, 0, 0, img.width, img.height)
         const data = ctx.getImageData(0, 0, img.width, img.height).data
@@ -45,23 +30,22 @@ export async function getDominantColor(
             count++
         }
 
-        r = Math.round(r / count)
-        g = Math.round(g / count)
-        b = Math.round(b / count)
+        r = Math.round(r / count);
+        g = Math.round(g / count);
+        b = Math.round(b / count);
 
-        let color = chroma.rgb(r, g, b)
+        let color = chroma.rgb(r, g, b);
 
-        let [L, a, b2] = color.oklab()
-        if (L < minLuminance) {
-            color = chroma.oklab(minLuminance, a, b2)
+        let [L, a, b2] = color.oklab();
+
+        if (L < minLuminance || L > maxLuminance) {
+            color = chroma.oklab(clamp(L, minLuminance, maxLuminance), a, b2);
         }
 
-        return returnRGB
-            ? color.num()
-            : color.hex().toUpperCase();
+        return (hex ? color.num() : color.hex().toUpperCase()) as T['hex'] extends true ? number : string;
     } catch (err) {
-        console.error(err)
-        return returnRGB ? 0x000000 : '#000000'
+        console.error(err);
+        return (hex ? 0x000000 : '#000000') as T['hex'] extends true ? number : string;
     }
 }
 
@@ -69,16 +53,12 @@ export const svgToBase64 = (svg: string) => {
     return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 }
 
-type Rect = { x: number; y: number; w: number; h: number };
-
-interface DrawRandomRectsOptions {
-    amount: number;
-    colors: string[];
-    widthRange: [number, number];
-    heightRange: [number, number];
-    margin?: number;
-    opacityRange?: [number, number];
-}
+type Rect = {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+};
 
 interface RandomRectsOptions {
     canvasWidth: number;
