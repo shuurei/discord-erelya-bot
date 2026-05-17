@@ -16,7 +16,7 @@ export const applicationEmojiHelperSync = () => {
         const emoji = emojisCached.get(emojiId);
         if (emoji) {
             Object.assign(acc, {
-                [`${emojiName}Emoji`]: emoji
+                [`${emojiName}Emoji`]: emoji ?? '❓'
             });
         }
 

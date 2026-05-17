@@ -6,7 +6,7 @@ import FastComponent from './FastComponent'
 import { logger } from './Logger';
 
 export type FastContainerData = Omit<APIContainerComponent, 'id' | 'type' | 'accent_color'> & {
-    color?: Color | number
+    color?: Color | number | null;
 };
 
 export type FastContainerMessageOptions = Partial<FastContainerData> & {

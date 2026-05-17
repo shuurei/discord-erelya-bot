@@ -8,3 +8,5 @@ export * from './CustomClient'
 export * from './FastEmbed'
 export * from './FastContainer'
 export * from './FastComponent'
+
+export * from './Gacha'

@@ -1,3 +1,5 @@
 export * from './VoiceSessionManager'
+export * from './DatabaseManager'
 export * from './CommandManager'
 export * from './EventManager'
+export * from './JobManager'

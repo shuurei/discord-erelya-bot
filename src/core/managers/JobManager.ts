@@ -1,30 +1,29 @@
+import path from 'path'
 import fg from 'fast-glob'
 import { pathToFileURL } from 'url'
 
-import path from 'path'
-
-import { CustomClient } from '../CustomClient'
-import { logger } from '../Logger'
 import { Job } from '../Job'
+import { logger } from '../Logger'
+import { CustomClient } from '../CustomClient'
 import { toCapitalize } from '@/utils'
 
 export interface JobManagerOptions {
+    cwd?: string;
     directoryPath: string;
 }
 
 export class JobManager {
     cache = new Map<string, Job>;
 
-    constructor(public client: CustomClient) { }
+    constructor(public client: CustomClient) {}
 
     async initialize(options: JobManagerOptions) {
-        logger.info('Starting jobs..', { arrowColor: 'orangeBright' });
-
-        const cwd = './src/';
-
+        const { directoryPath, cwd = './src/' } = options ?? {}
         let stats = { valid: 0, invalid: 0 }
 
-        const files = await fg(options.directoryPath.concat('/**/*.{ts,js}'), { cwd });
+        logger.info('Starting jobs..', { arrowColor: 'orangeBright' });        
+
+        const files = await fg(directoryPath.concat('/**/*.{ts,js}'), { cwd });
         if (files.length > 0) {
             logger.header(({ orange }) => orange('✦ JOBS ✦'));
 
@@ -36,6 +35,7 @@ export class JobManager {
                 };
 
                 const jobName = path.basename(filePath).split('.')[0];
+                mod.client = this.client;
                 mod.name = jobName;
 
                 this.cache.set(jobName, mod);
@@ -62,7 +62,6 @@ export class JobManager {
             job.pause();
             job.resume();
             job.trigger();
-
             job.logger.log('Restard')
         }
     }

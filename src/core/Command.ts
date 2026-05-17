@@ -7,10 +7,18 @@ import {
     PermissionsBitField,
     LocalizationMap,
     Message,
+    ButtonInteraction,
 } from 'discord.js'
+
+import {
+    User as UserEntity,
+    Guild as GuildEntity,
+    Member as MemberEntity
+} from '@/database/entities'
 
 import { CustomClient } from './CustomClient'
 import client from '@/client'
+import { BooleanKeys, ModuleEntity, ModuleName } from '@/database/services'
 
 /** @deprecated */
 export enum CommandMessageStyle {
@@ -55,11 +63,11 @@ export interface CommandAccessOptions {
         authorizedIds?: string[];
         isPremium?: boolean;
         isPartner?: boolean;
-        // modules?: Partial<{
-        //     [K in keyof typeof defaultGuildModuleSettings]: Partial<{
-        //         [P in keyof typeof defaultGuildModuleSettings[K]]: boolean
-        //     }> | boolean
-        // }>
+        modules?: Partial<{
+            [K in ModuleName]: Partial<{
+                [P in BooleanKeys<ModuleEntity<K>>]: boolean
+            }>
+        }>
     };
 }
 
@@ -79,6 +87,21 @@ export interface CommandStructure {
     };
 }
 
+export interface DatabaseCacheContext {
+    user: UserEntity;
+    guild: GuildEntity;
+    member: MemberEntity;
+}
+
+export interface CommandInteractionContext {
+    dbc: DatabaseCacheContext;
+}
+
+export interface CommandMessageContext {
+    args: (any | null)[];
+    dbc: DatabaseCacheContext;
+}
+
 export interface CommandOptions {
     nameLocalizations?: LocalizationMap;
     description?: string;
@@ -87,12 +110,20 @@ export interface CommandOptions {
     cooldown?: number;
     slashCommand?: SlashCommandOptions;
     messageCommand?: MessageCommandOptions;
-    onInteraction?: (this: Command, interaction: ChatInputCommandInteraction<'cached'>) => any;
+    onInteraction?: (this: Command, interaction: ChatInputCommandInteraction<'cached'>, ctx: CommandInteractionContext) => any;
+    onButton?: (this: Command, interaction: CommandButtonInteraction) => any;
     onMessage?: (this: Command, message: Message<true>, ctx: CommandMessageContext) => any;
+}
+
+export interface CommandButtonInteraction extends ButtonInteraction<'cached'> {
+    invokerId: string;
+    originalCustomId: string;
 }
 
 export class Command {
     client: CustomClient;
+
+    id: string;
 
     nameLocalizations?: LocalizationMap;
     description?: string;
@@ -104,7 +135,8 @@ export class Command {
 
     structure: CommandStructure;
 
-    onInteraction?: (interaction: ChatInputCommandInteraction<'cached'>) => any;
+    onInteraction?: (interaction: ChatInputCommandInteraction<'cached'>, ctx: CommandInteractionContext) => any;
+    onButton?: (interaction: CommandButtonInteraction) => any;
     onMessage?: (message: Message, ctx?: CommandMessageContext) => any;
 
     constructor(options: CommandOptions) {

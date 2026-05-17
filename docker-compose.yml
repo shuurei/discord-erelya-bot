@@ -1,19 +1,26 @@
 services:
-    prod:
-        container_name: erelya-bot-prod
+    release:
+        container_name: erelya-release
         build:
             context: .
             dockerfile: Dockerfile
-            args:
-                DATABASE_URL: ${DATABASE_URL}
         image: erelya:latest
         restart: always
         env_file: .env.prod
-    preview:
-        container_name: erelya-bot-preview
-        build:
-            context: .
-            dockerfile: Dockerfile
-        image: erelya:preview
-        restart: always
-        env_file: .env.prod
+    db:
+        image: mariadb:12
+        container_name: erelya-db
+        restart: unless-stopped
+        env_file: .env
+        environment:
+            MYSQL_USER: ${DATABASE_USER}
+            MYSQL_PASSWORD: ${DATABASE_PASSWORD}
+            MYSQL_DATABASE: ${DATABASE_NAME}
+            MYSQL_ALLOW_EMPTY_PASSWORD: true
+            MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD}
+        ports:
+            - "${DATABASE_PORT}:3306"
+        volumes:
+            - data:/var/lib/mysql
+volumes:
+    data: {}

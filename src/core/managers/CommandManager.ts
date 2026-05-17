@@ -17,8 +17,9 @@ import { logger } from '../Logger'
 import FileCache from '../FileCache'
 import CustomClient from '../CustomClient'
 
-export interface CommandManagerOptions {
+export interface CommandManagerLoadOptions {
     directoryPath: string;
+    cwd?: string;
 }
 
 export interface CommandManagerResolveSlashCommandOptions {
@@ -87,18 +88,13 @@ export class CommandManager {
         return this.restrictedCommands.filter((cmd) => cmd.onMessage);
     }
 
-    async load(options: CommandManagerOptions) {
+    async load(options: CommandManagerLoadOptions) {
+        const { directoryPath, cwd = './src/' } = options ?? {}
+        let stats = { loaded: 0, invalid: 0, }
+
         logger.info('Starting client commands loading..', { arrowColor: 'orangeBright' });
 
-        const cwd = './src/';
-        const path = options.directoryPath.concat('/**/*.{ts,js}');
-
-        let stats = {
-            loaded: 0,
-            invalid: 0,
-        }
-
-        const files = await fg(path, { cwd });
+        const files = await fg(directoryPath.concat('/**/*.{ts,js}'), { cwd });
         if (files.length > 0) {
             for (const filePath of files) {
                 const mod = (await import(pathToFileURL(`${cwd}/${filePath}`).href))?.default;
@@ -233,6 +229,8 @@ export class CommandManager {
                             );
                         }
                     }
+
+                    cmd.id = nameParts.filter(Boolean).join('.');
 
                     const name = nameParts
                         .filter((name) => typeof name === 'string')

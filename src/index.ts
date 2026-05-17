@@ -1,5 +1,5 @@
 import 'dotenv/config'
-await import('reflect-metadata')
+await import ('reflect-metadata');
 
 import os from 'os'
 import path from 'path'

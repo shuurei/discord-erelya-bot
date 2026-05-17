@@ -13,7 +13,7 @@ export interface ClientEvents extends DiscordClientEvents {
     chatInputInteractionCreate: [ChatInputCommandInteraction];
     buttonInteractionCreate: [ButtonInteraction];
     commandCreate: [Command, Message | ChatInputCommandInteraction, DatabaseContext, string[] | null[]];
-    hubReady: [Guild];
+    hubReady: [CustomClientHUb];
     clientSetup: [Client];
 };
 

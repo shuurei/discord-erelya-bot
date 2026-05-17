@@ -138,6 +138,91 @@ export const applicationEmojiIds = {
         dev: '1412970747907014656',
         prod: '1423305833587933307'
     },
+    // News
+    identity: {
+        dev: '1503653023115903116',
+        prod: ''
+    }, 
+    crown: {
+        dev: '1503656145544544296',
+        prod: ''
+    },
+    leaf: {
+        dev: '1503655887091535962',
+        prod: ''
+    },
+    diamond: {
+        dev: '1503655909799362640',
+        prod: ''
+    },
+    thread: {
+        dev: '1503655931102101635',
+        prod: ''
+    },
+    userCheck: {
+        dev: '1503657737480044554',
+        prod: ''
+    },
+    moderate: {
+        dev: '1503662391575969822',
+        prod: ''
+    },
+    crossMark: {
+        dev: '1503663336750055495',
+        prod: ''
+    },
+    checkMark: {
+        dev: '1503663330584301629',
+        prod: ''
+    },
+    infoIcon: {
+        dev: '1503668975135887370',
+        prod: ''
+    },
+    clockIcon: {
+        dev: '1503691120754950285',
+        prod: ''
+    },
+    tagIcon: {
+        dev: '1503867166535975149',
+        prod: ''
+    },
+    coinsIcon: {
+        dev: '1504225260373807155',
+        prod: ''
+    },
+    shieldIcon: {
+        dev: '1504279470280802464',
+        prod: ''
+    },
+    ankhIcon: {
+        dev: '1504272656273375313',
+        prod: ''
+    },
+    rankFIcon: {
+        dev: '1504274836120276992',
+        prod: ''
+    },
+    rankEIcon: {
+        dev: '1504274811419889775',
+        prod: ''
+    },
+    rankDIcon: {
+        dev: '1504274784647909396',
+        prod: ''
+    },
+    rankCIcon: {
+        dev: '1504274730205577357',
+        prod: ''
+    },
+    rankBIcon: {
+        dev: '1504274689441140777',
+        prod: ''
+    },
+    rankAIcon: {
+        dev: '1504274609501900801',
+        prod: ''
+    },
 } satisfies Record<string, ApplicationEmojiId>;
 
 const getApplicationEmojiIds  = (type: keyof ApplicationEmojiId) => {

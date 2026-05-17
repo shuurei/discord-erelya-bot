@@ -5,27 +5,23 @@ import Event from '../Event'
 import { logger } from '../Logger'
 import { CustomClient } from '../CustomClient'
 import { toCapitalize } from '@/utils'
+import FastEmbed from '../FastEmbed'
 
 export interface EventManagerListenOptions {
     directoryPath: string;
+    cwd?: string;
 }
 
 export class EventManager {
     constructor(public client: CustomClient) { }
 
     async listen(options: EventManagerListenOptions) {
+        const { directoryPath, cwd = './src/' } = options ?? {}
+        let stats = { valid: 0, invalid: 0 }
+
         logger.info('Starting client events loading..', { arrowColor: 'orangeBright' });
 
-        const cwd = './src';
-        const path = options.directoryPath.concat('/**/*.{ts,js}');
-
-        let stats = {
-            valid: 0,
-            invalid: 0
-        }
-
-        const files = await fg(path, { cwd });
-
+        const files = await fg(directoryPath.concat('/**/*.{ts,js}'), { cwd });
         if (files.length > 0) {
             logger.header(({ orange }) => orange('✦ EVENTS ✦'));
 
@@ -46,33 +42,35 @@ export class EventManager {
                         );
                     } catch (ex: any) {
                         logger.error(ex);
-                        // if (this.client.hub && this.client.hub?.heartLogsChannel) {
-                        // const potentialGuild = args[0]?.guild;
-                        // const potentialUser = args[0]?.user;
 
-                        // await this.client.hub.heartLogsChannel.send({
-                        //     embeds: [
-                        //         EmbedUI.create({
-                        //             color: 'blue',
-                        //             title: `⚡ Event Error`,
-                        //             description: [
-                        //                 `- Event: \`${mod.name}\``,
-                        //                 potentialGuild && [`- Guild`,
-                        //                     `  - \`${potentialGuild?.name}\``,
-                        //                     `  - \`${potentialGuild?.id}\``],
-                        //                 potentialUser && [`- Author`,
-                        //                     `  - \`${potentialUser?.username}\``,
-                        //                     `  - \`${potentialUser?.id}\``],
-                        //             ].filter(Boolean).flat().join(`\n`)
-                        //         }),
-                        //         EmbedUI.create({
-                        //             color: 'red',
-                        //             title: '🐞 Stack',
-                        //             description: `>>> ${ex?.stack}`
-                        //         })
-                        //     ],
-                        // });
-                        // }
+                        const hub = this.client.hub;
+                        if (hub && hub.heartLogsChannel) {
+                            const potentialGuild = args[0]?.guild;
+                            const potentialUser = args[0]?.user;
+
+                            return await hub.heartLogsChannel.send({
+                                embeds: [
+                                    FastEmbed.create({
+                                        color: 'blue',
+                                        title: `⚡ Event Error`,
+                                        description: [
+                                            `- Event: \`${mod.name}\``,
+                                            potentialGuild && [`- Guild`,
+                                                `  - \`${potentialGuild?.name}\``,
+                                                `  - \`${potentialGuild?.id}\``],
+                                            potentialUser && [`- Author`,
+                                                `  - \`${potentialUser?.username}\``,
+                                                `  - \`${potentialUser?.id}\``],
+                                        ].filter(Boolean).flat().join(`\n`)
+                                    }),
+                                    FastEmbed.create({
+                                        color: 'red',
+                                        title: '🐞 Stack',
+                                        description: `>>> ${ex?.stack}`
+                                    })
+                                ],
+                            });
+                        }
                     }
                 });
 

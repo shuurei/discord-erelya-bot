@@ -11,7 +11,7 @@ export interface GetDominantColorOptions {
 }
 
 export const getDominantColor = async <T extends GetDominantColorOptions>(imgURL: string, options?: T) => {
-    const { hex = false, minLuminance = 0.4, maxLuminance = 0.8 } = options ?? {}
+    const { hex = true, minLuminance = 0.4, maxLuminance = 0.8 } = options ?? {}
 
     try {
         const img = await loadImage(imgURL);
@@ -42,10 +42,10 @@ export const getDominantColor = async <T extends GetDominantColorOptions>(imgURL
             color = chroma.oklab(clamp(L, minLuminance, maxLuminance), a, b2);
         }
 
-        return (hex ? color.num() : color.hex().toUpperCase()) as T['hex'] extends true ? number : string;
+        return (hex ? color.num() : color.hex().toUpperCase()) as T['hex'] extends false ? string : number;
     } catch (err) {
         console.error(err);
-        return (hex ? 0x000000 : '#000000') as T['hex'] extends true ? number : string;
+        return (hex ? 0x000000 : '#000000') as T['hex'] extends false ? string : number;
     }
 }
 

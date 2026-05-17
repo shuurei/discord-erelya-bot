@@ -17,3 +17,19 @@ export const isOnlySpaces = (str: string) => {
 export const escapeSafe = (str: string) => {
     return str.replace(/[^\p{Script=Latin}\p{N}._\- :]/gu, '');
 };
+
+export const jsonToMarkdown = (json: any, language = 'json') => {
+    return `\`\`\`${language}\n${JSON.stringify(json, null, 4)}\`\`\``
+}
+
+export const formatMedalRank = (rank: number | string) => {
+    if (rank == 1) {
+        return '🥇';
+    } else if (rank == 2) {
+        return '🥈';
+    } else if (rank ==3) {
+        return '🥉';
+    } else {
+        return rank.toLocaleString('en');
+    }
+}

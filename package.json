@@ -1,6 +1,6 @@
 {
 	"name": "erelya",
-	"version": "1.9.7",
+	"version": "2.0.0",
 	"type": "module",
 	"author": {
 		"name": "Shurei",
@@ -10,13 +10,14 @@
 	"license": "GPL-3.0-only",
 	"main": "build/index.js",
 	"scripts": {
+		"db": "docker compose up db -d",
 		"dev": "tsx watch src/index.ts",
-		"preview": "docker compose up preview",
-		"start": "docker compose up prod",
-		"build": "docker compose build prod"
+		"build": "docker compose build release",
+		"start": "docker compose up release"
 	},
 	"dependencies": {
 		"@napi-rs/canvas": "^0.1.98",
+		"better-sqlite3": "^12.9.0",
 		"chroma-js": "^3.2.0",
 		"croner": "^10.0.1",
 		"discord.js": "^14.26.3",
@@ -24,11 +25,13 @@
 		"fast-glob": "^3.3.3",
 		"luxon": "^3.7.2",
 		"mysql2": "^3.22.0",
+		"pg": "^8.20.0",
 		"picocolors": "^1.1.1",
 		"reflect-metadata": "^0.2.2",
 		"typeorm": "^0.3.28"
 	},
 	"devDependencies": {
+		"@types/better-sqlite3": "^7.6.13",
 		"@types/chroma-js": "^3.1.2",
 		"@types/luxon": "^3.7.1",
 		"@types/node": "^25.6.0",

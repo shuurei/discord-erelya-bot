@@ -48,17 +48,17 @@ export const MemberHelperSync = (member: GuildMember) => {
             return name;
         },
         async getAvatarDominantColor<Options extends GetDominantColorOptions>(options?: Options) {
-            const hex = options?.hex ?? false;
+            const hex = options?.hex ?? true;
 
             const avatarURL = this.getAvatarURL({ forceStatic: true });
             if (!avatarURL) {
-                return (hex ? 0x000000 : '#000000') as Options['hex'] extends true ? number : string;
+                return (hex ? 0x000000 : '#000000') as Options['hex'] extends false ? string : number;
             }
 
             return await getDominantColor(avatarURL, {
                 ...options,
                 hex,
-            }) as Options['hex'] extends true ? number : string;
+            }) as Options['hex'] extends false ? string : number;
         },
         getAvatarURL(options?: ImageURLOptions) {
             return member.displayAvatarURL?.(options) ?? member.user.displayAvatarURL?.(options) ?? member.user.defaultAvatarURL;

@@ -1,25 +1,16 @@
-import {
-    ChatInputCommandInteraction, 
-    ButtonInteraction,
-    ClientEvents,
-    Guild,
-    Message,
-    Client,
-} from 'discord.js'
-
-import { CustomClient } from './CustomClient'
+import { ClientEvents, Message, ChatInputCommandInteraction, ButtonInteraction } from 'discord.js'
+import { CustomClient, CustomClientHub } from './CustomClient'
 import { Command } from './Command'
 
 export interface CustomClientEvents extends ClientEvents {
-    // chatInputInteractionCreate: [ChatInputCommandInteraction];
-    // buttonInteractionCreate: [ButtonInteraction];
+    buttonInteractionCreate: [ButtonInteraction];
     slashCommandCreate: [ChatInputCommandInteraction],
     commandCreate: [{
         command: Command;
         messageOrInteraction : Message | ChatInputCommandInteraction;
-        args?: (string | null)[];
+        args?: (any | null)[];
     }];
-    // hubReady: [Guild];
+    hubReady: [CustomClientHub];
 };
 
 export interface EventRunArgs<Event extends keyof CustomClientEvents> {

@@ -1,29 +1,25 @@
 FROM node:24-alpine AS builder
 
-WORKDIR /bot
+WORKDIR /app
 
-COPY package.json ./
+COPY package*.json ./
 COPY tsconfig.json ./
 COPY tsup.config.ts ./
 
 RUN npm install
 
-ARG DATABASE_URL
-ENV DATABASE_URL=$DATABASE_URL
-
 COPY src ./src
 
 RUN npx tsup && npx tsc-alias
 
-COPY src/ui/assets/fonts ./build/ui/assets/fonts
+COPY src/assets/fonts ./build/assets/fonts
 
 FROM node:24-alpine
 
-WORKDIR /bot
+WORKDIR /app
 
-COPY --from=builder /bot/node_modules ./node_modules
-COPY --from=builder /bot/package.json ./
-COPY --from=builder /bot/build ./src
-COPY --from=builder /bot/src/database/core ./src/database/core
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/build ./src
 
 CMD ["node", "src/index.js"]

@@ -1,22 +1,27 @@
 import {
-    DefaultWebSocketManagerOptions,
-    DiscordjsErrorCodes,
+    Guild,
+    Client,
+    ChannelType,
+    TextChannel,
     ActivityType,
     ClientOptions,
     ForumChannel,
-    TextChannel,
-    Client,
-    Guild
+    DiscordjsErrorCodes,
+    DefaultWebSocketManagerOptions,
 } from 'discord.js'
 
 import { logger, Logger } from './Logger'
 import { randomBetween } from '@/utils'
 import { CustomClientEvents } from './Event'
 
-import { EventManager } from './managers/EventManager'
-import { CommandManager } from './managers/CommandManager'
-import { VoiceSessionManager } from './managers'
-import JobManager from './managers/JobManager'
+import {
+    JobManager,
+    EventManager,
+    CommandManager,
+    VoiceSessionManager,
+    DatabaseManager
+} from './managers'
+import db from '@/database/db'
 
 export interface CustomClientHub extends Guild {
     ticketChannel?: ForumChannel;
@@ -33,6 +38,7 @@ export class CustomClient extends Client {
     jobs: JobManager;
     events: EventManager;
     commands: CommandManager;
+    database: DatabaseManager;
     voiceSessions: VoiceSessionManager;
 
     logger: Logger;
@@ -84,6 +90,7 @@ export class CustomClient extends Client {
         this.jobs = new JobManager(this);
         this.events = new EventManager(this);
         this.commands = new CommandManager(this);
+        this.database = new DatabaseManager(this);
         this.voiceSessions = new VoiceSessionManager(this);
 
         this.logger = logger.use({
@@ -98,6 +105,36 @@ export class CustomClient extends Client {
 
         const reflexion = this.reflexions[Math.floor(Math.random() * this.reflexions.length)];
         this.user.setActivity(reflexion, { type: ActivityType.Custom });
+    }
+
+    async initializeHub() {
+        if (!process.env.HUB_GUILD_ID) {
+            return this.logger.info('Skipped hub initialization', { arrowColor: 'orangeBright' });
+        };
+
+        this.logger.info('Initializing client hub..', { arrowColor: 'orangeBright' });
+
+        const hub = await this.guilds.fetch(process.env.HUB_GUILD_ID);
+        if (!hub) {
+            throw new Error(`❌ » Guild Hub not found (${process.env.HUB_GUILD_ID})`);
+        }
+
+        this.hub = hub;
+
+        if (process.env.HUB_HEART_LOGS_CHANNEL_ID) {
+            const heartLogsChannel = await hub.channels.fetch(process.env.HUB_HEART_LOGS_CHANNEL_ID);
+            if (heartLogsChannel?.type === ChannelType.GuildText) {
+                this.hub = Object.assign(hub, { heartLogsChannel });
+                this.logger.info('Hub heart logs initialized', { arrowColor: 'greenBright' });
+            } else {
+                throw new Error(`❌ » Guild Hub heart logs channel invalid (${process.env.HUB_HEART_LOGS_CHANNEL_ID})`);
+            }
+        } else {
+            this.logger.info(`Hub Heart Logs skipped`, { arrowColor: 'orangeBright' });
+        }
+
+        this.emit('hubReady', hub);
+        this.logger.info('Hub initialized', { arrowColor: 'greenBright' });
     }
 
     async login(token?: string) {
@@ -136,59 +173,12 @@ export class CustomClient extends Client {
                 }
 
                 await this.commands.syncSlashCommands();
-                
+
                 logger.info(({ greenBright }) => `${greenBright(client.username)} successfully connected !`, { arrowColor: 'greenBright' });
             }
 
             return token;
         });
-
-        // if (user) {
-
-
-        //     // if (process.env.HUB_GUILD_ID) {
-        //     //     this.logger.info('Initializing client hub', { arrowColor: 'orangeBright' });
-
-        //     //     const hub = await this.guilds.fetch(process.env.HUB_GUILD_ID);
-        //     //     if (!hub) {
-        //     //         throw new Error(`❌ » Hub guild not found (${process.env.HUB_GUILD_ID})`);
-        //     //     }
-
-        //     //     if (process.env.HUB_TICKET_CHANNEL_ID) {
-        //     //         const ticketChannel = await hub.channels.fetch(process.env.HUB_TICKET_CHANNEL_ID);
-        //     //         if (ticketChannel?.type === ChannelType.GuildForum) {
-        //     //             this.hub = Object.assign(hub, {
-        //     //                 ticketChannel
-        //     //             });
-
-        //     //             this.logger.info('Hub ticket channel initialized', { arrowColor: 'greenBright' });
-        //     //         } else {
-        //     //             throw new Error(`❌ » Hub ticket channel invalid (${process.env.HUB_TICKET_CHANNEL_ID})`);
-        //     //         }
-        //     //     } else {
-        //     //         this.logger.info(`Hub Ticket Channel skipped`, { arrowColor: 'orangeBright' });
-        //     //     }
-
-        //     //     if (process.env.HUB_HEART_LOGS_CHANNEL_ID) {
-        //     //         const heartLogsChannel = await hub.channels.fetch(process.env.HUB_HEART_LOGS_CHANNEL_ID);
-        //     //         if (heartLogsChannel?.type === ChannelType.GuildText) {
-        //     //             this.hub = Object.assign(hub, { heartLogsChannel });
-
-        //     //             this.logger.info('Hub heart logs initialized', { arrowColor: 'greenBright' });
-        //     //         } else {
-        //     //             throw new Error(`❌ » Hub heart logs channel invalid (${process.env.HUB_HEART_LOGS_CHANNEL_ID})`);
-        //     //         }
-        //     //     } else {
-        //     //         this.logger.info(`Hub Heart Logs skipped`, { arrowColor: 'orangeBright' });
-        //     //     }
-
-        //     //     this.emit('hubReady', hub);
-        //     //     this.logger.info('Hub initialized', { arrowColor: 'greenBright' });
-        //     // } else {
-        //     //     this.logger.info('Skipped hub initialization', { arrowColor: 'orangeBright' });
-        //     // }
-        // }
-
     }
 
     async start(token?: string) {
@@ -198,6 +188,8 @@ export class CustomClient extends Client {
         await this.commands.load({ directoryPath: 'commands' });
 
         return await this.login(token).then(async () => {
+            await this.initializeHub();
+            await this.database.initialize();
             await this.jobs.initialize({ directoryPath: 'jobs' });
         });
     }

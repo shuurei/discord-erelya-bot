@@ -1,3 +1,4 @@
+import { applicationEmojiHelperSync } from '@/utils';
 import {
     ButtonStyle,
     SeparatorSpacingSize,
@@ -31,6 +32,7 @@ import {
     ChannelSelectMenuComponentData,
     InteractionButtonComponentData,
 } from 'discord.js'
+import { Command } from './Command';
 
 // Separator
 export interface FastComponentSeparatorOptions {
@@ -46,9 +48,16 @@ export enum FastComponentButtonColor {
     Red = ButtonStyle.Danger,
 }
 
+export interface FastComponentInteractionButtonCustomId {
+    id: string;
+    invokerId: string;
+    commandId: string;
+}
+
 export type FastComponentLinkButtonOptions = Omit<LinkButtonComponentData, 'type' | 'label' | 'style'>;
-export type FastComponentInteractionButtonOptions = Omit<InteractionButtonComponentData, 'type' | 'label' | 'style'> & {
-    color?: keyof typeof FastComponentButtonColor | FastComponentButtonColor | Omit<ButtonStyle, 'Link' | 'Premium'>
+export type FastComponentInteractionButtonOptions = Omit<InteractionButtonComponentData, 'type' | 'label' | 'style' | 'customId'> & {
+    color?: keyof typeof FastComponentButtonColor | FastComponentButtonColor | Omit<ButtonStyle, 'Link' | 'Premium'>;
+    customId: string | FastComponentInteractionButtonCustomId | false
 };
 
 // Section
@@ -103,6 +112,16 @@ export class FastComponent {
             label = null;
         }
 
+        if ('customId' in options) {
+            if (typeof options.customId === 'object') {
+                const { id, invokerId, commandId } = options.customId;
+    
+                options.customId = `${commandId}#${invokerId}#${id}`;
+            } else if (typeof options.customId === 'boolean') {
+                options.customId = (Math.floor(Math.random() * Date.now())).toString();
+            }
+        }
+
         return new ButtonBuilder({
             ...options,
             label,
@@ -125,7 +144,7 @@ export class FastComponent {
     static createStringSelectMenu = (options: FastComponentStringSelectMenuOptions) => {
         return new StringSelectMenuBuilder(options).toJSON();
     }
-    
+
     static createRoleSelectMenu = (options: FastComponentRoleSelectMenuOptions) => {
         return new RoleSelectMenuBuilder(options).toJSON();
     }

@@ -1,6 +1,8 @@
+import { DatabaseCacheContext, Event, logger } from '@/core'
 import { BaseMessageOptions, ChatInputCommandInteraction, Message, Team } from 'discord.js'
+import { GuildService, MemberService, ModuleName, ModuleService, UserService } from '@/database/services'
 import { createNotifCard } from '@/components/cards'
-import { Event, logger } from '@/core'
+import { UserEntityFlags } from '@/utils'
 
 const replyBy = async (interaction: Message | ChatInputCommandInteraction, payload: BaseMessageOptions) => {
     try {
@@ -53,6 +55,9 @@ export default new Event({
                 throw new Error('No guild or no user')
             };
 
+            const guildId = guild.id;
+            const userId = user.id;
+
             const access = command.access ?? null;
             let isDeveloper = false;
 
@@ -64,38 +69,55 @@ export default new Event({
                     isDeveloper = creator.id === user.id;
                 }
             }
-            
+
+            const [userDatabase, guildDatabase, memberDatabase] = await Promise.all([
+                UserService.findOrCreate(userId),
+                GuildService.findOrCreate(guildId),
+                MemberService.findOrCreate({ guildId, userId }),
+            ]);
+
+            const dbc: DatabaseCacheContext = {
+                user: userDatabase,
+                guild: guildDatabase,
+                member: memberDatabase,
+            };
+
             if (access) {
-                // if (access.guild) {
-                //     if (access.guild.modules) {
-                //         const moduleNames = Object.keys(access.guild.modules) as GuildModuleName[];
-                //         const areModulesEnabled = await guildModuleService.areEnabled(guild.id, moduleNames, 'every');
-                //         if (!areModulesEnabled) {
-                //             return await replyAuthorizationRefused(
-                //                 'Contexte invalide. Un ou plusieurs modules requis sont désactivés par le gérant du serveur.',
-                //             );
-                //         }
+                if (access.guild) {
+                    if (access.guild.modules) {
+                        const moduleNames = Object.keys(access.guild.modules) as ModuleName[];
+                        const modules = await ModuleService.findMany(guild.id, moduleNames);
 
-                //         for (const moduleName of moduleNames) {
-                //             const moduleFields = Object.keys(access.guild.modules[moduleName] as any) as GuildModuleKeys<typeof moduleName>[];
+                        const allEnabled = moduleNames.every(name => modules[name]?.enabled);
+                        if (!allEnabled) {
+                            return replyUnauthorization(
+                                'Un ou plusieurs modules sont désactivés par le gérant du serveur.'
+                            );
+                        }
 
-                //             if (moduleFields.length === 0) continue;
+                        for (const moduleName of moduleNames) {
+                            const moduleConfig = access.guild.modules[moduleName];
+                            if (!moduleConfig) continue;
 
-                //             const areFieldsEnabled = await guildModuleService.areSettingFieldEnabled(
-                //                 guild.id,
-                //                 moduleName,
-                //                 moduleFields,
-                //                 'every'
-                //             );
+                            const fields = Object.keys(moduleConfig) as (keyof typeof moduleConfig)[];
+                            if (fields.length < 1) continue;
 
-                //             if (!areFieldsEnabled) {
-                //                 return await replyAuthorizationRefused(
-                //                     `Contexte invalide. Une ou plusieurs options lié à un module requis sont désactivés.`,
-                //                 );
-                //             }
-                //         }
-                //     }
-                // }
+                            const module = modules[moduleName];
+                            const allFieldsEnabled = fields.every((field) => {
+                                const required = moduleConfig[field];
+                                const actual = module?.[field as keyof typeof module];
+
+                                return !required || actual === true;
+                            });
+
+                            if (!allFieldsEnabled) {
+                                return replyUnauthorization(
+                                    'Une ou plusieurs options liées à un module requis sont désactivées.'
+                                );
+                            }
+                        }
+                    }
+                }
 
                 if (access.channel) {
                     if (
@@ -112,16 +134,11 @@ export default new Event({
                         return await replyUnauthorization(`Niveau d'autorisation insuffisante. Niveau 5 requis.`);
                     }
 
-                    
-                    // if (userDatabase && !isDeveloper) {
-                    //     if (access.user?.isStaff && !userDatabase.flags.has(PrismaUserFlags.CLEANER)) {
-                    //         return await replyAuthorizationRefused(`Accès restreint. Probabilité de succès insuffisante.`);
-                    //     }
-
-                    //     if (access.user?.isBetaTester && !userDatabase.flags.has(PrismaUserFlags.BETA)) {
-                    //         return await replyAuthorizationRefused(`Accès restreint. Statut bêta requis.`);
-                    //     }
-                    // }
+                    if (userDatabase && !isDeveloper) {
+                        if (access.user?.isBetaTester && !userDatabase.flagsBitField.has(UserEntityFlags.TESTER)) {
+                            return await replyUnauthorization(`Accès restreint. Privilége bêta requis.`);
+                        }
+                    }
 
                     if (access.user.isGuildOwner && user.id !== guild.ownerId) {
                         return await replyUnauthorization(`Vous n’êtes pas le propriétaire de cette serveur`);
@@ -133,14 +150,10 @@ export default new Event({
                 }
             }
 
-            // Object.assign(interaction, database);
-
-            // Object.assign(messageOrInteraction, { database });
-
             if (isSlash && command.onInteraction && messageOrInteraction.inCachedGuild()) {
-                return await command.onInteraction(messageOrInteraction);
+                return await command.onInteraction(messageOrInteraction, { dbc });
             } else if (isMessage && command.onMessage && messageOrInteraction.inGuild()) {
-                return await command.onMessage(messageOrInteraction, { args });
+                return await command.onMessage(messageOrInteraction, { args: args ?? [], dbc });
             }
         } catch (err: any) {
             this.client.logger.error(err);

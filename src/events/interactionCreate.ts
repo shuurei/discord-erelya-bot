@@ -5,9 +5,8 @@ export default new Event({
     async run({ events: [interaction] }) {
         if (interaction.isChatInputCommand()) {
             this.client.emit('slashCommandCreate', interaction);
+        } else if (interaction.isButton()) {
+            this.client.emit('buttonInteractionCreate', interaction);
         }
-        // else if (interaction.isButton()) {
-            // this.client.emit('buttonInteractionCreate', interaction);
-        // }
     }
 });

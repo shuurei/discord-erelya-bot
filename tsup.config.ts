@@ -1,11 +1,7 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-    entry: [
-        'src/**/**.ts',
-        '!src/database/core/**',
-        '!src/**/test.*'
-    ],
+    entry: [ 'src/**/**.ts' ],
     outDir: 'build',
     format: ['esm'],
     target: 'esnext',
