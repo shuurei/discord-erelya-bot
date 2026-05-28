@@ -33,10 +33,10 @@ export async function handleMemberDailyQuestNotify({
         : true;
 
     if (isMessageCompleted && isVoiceCompleted) {
-        await channel.send(`<@${userId}> **Quête quotidienne complétée !** Récompense disponible 🎁`);
+        await channel.send(`**Quête quotidienne complétée !** Récompense disponible 🎁`);
     } else if (voiceJustCompleted) {
-        await channel.send(`<@${userId}> **Quête quotidienne** 🎯 — Objectif vocal complété (**1 / 2**)`);
+        await channel.send(`**Quête quotidienne** 🎯 — Objectif vocal complété (**1 / 2**)`);
     } else if (messageJustCompleted) {
-        await channel.send(`<@${userId}> **Quête quotidienne** 🎯 — Objectif message complété (**1 / 2**)`);
+        await channel.send(`**Quête quotidienne** 🎯 — Objectif message complété (**1 / 2**)`);
     }
 }

@@ -1,13 +1,18 @@
 {
 	"name": "erelya",
-	"version": "1.9.7",
-	"author": {
-		"name": "Shurei",
-		"url": "https://shuurei.github.io/portfolio/"
-	},
-	"description": "A discord bot project",
-	"license": "GPL-3.0-only",
+	"version": "1.9.8",
+	"description": "Erelya Bot is an open-source Discord bot offering moderation tools, fun commands, and customizable features for your community ! :)",
 	"type": "module",
+	"license": "CC-BY-NC-ND-4.0",
+	"keywords": [
+		"bot",
+		"discord",
+		"discord-js",
+		"discord-ts",
+		"lunaria",
+		"erelya",
+		"erelya-bot"
+	],
 	"main": "build/index.js",
 	"scripts": {
 		"dev": "tsx watch src/index.ts",
@@ -18,13 +23,13 @@
 		"db:generate": "npx prisma generate"
 	},
 	"dependencies": {
-		"@napi-rs/canvas": "^0.1.89",
-		"@prisma/adapter-mariadb": "^7.3.0",
-		"@prisma/client": "7.3.0",
+		"@napi-rs/canvas": "^1.0.0",
+		"@prisma/adapter-mariadb": "^7.8.0",
+		"@prisma/client": "7.8.0",
 		"chroma-js": "^3.2.0",
 		"croner": "^10.0.1",
-		"discord.js": "14.25.1",
-		"dotenv": "^17.2.3",
+		"discord.js": "14.26.4",
+		"dotenv": "^17.4.2",
 		"fast-glob": "^3.3.3",
 		"luxon": "^3.7.2",
 		"picocolors": "^1.1.1"
@@ -32,12 +37,12 @@
 	"devDependencies": {
 		"@types/chroma-js": "^3.1.2",
 		"@types/luxon": "^3.7.1",
-		"@types/node": "^25.2.0",
-		"prisma": "7.3.0",
-		"tsc-alias": "^1.8.16",
+		"@types/node": "^25.9.1",
+		"prisma": "7.8.0",
+		"tsc-alias": "^1.8.17",
 		"tsup": "^8.5.1",
-		"tsx": "^4.21.0",
-		"typescript": "^5.9.3"
+		"tsx": "^4.22.3",
+		"typescript": "^6.0.3"
 	},
 	"engines": {
 		"node": "^24"
