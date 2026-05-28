@@ -200,29 +200,41 @@ export const applicationEmojiIds = {
         prod: ''
     },
     rankFIcon: {
-        dev: '1504274836120276992',
+        dev: '1505576358569578576',
         prod: ''
     },
     rankEIcon: {
-        dev: '1504274811419889775',
+        dev: '1505576348511375482',
         prod: ''
     },
     rankDIcon: {
-        dev: '1504274784647909396',
+        dev: '1505568001502613544',
         prod: ''
     },
     rankCIcon: {
-        dev: '1504274730205577357',
+        dev: '1505567784267026613',
         prod: ''
     },
     rankBIcon: {
-        dev: '1504274689441140777',
+        dev: '1505567588615196785',
         prod: ''
     },
     rankAIcon: {
-        dev: '1504274609501900801',
+        dev: '1505567070668984350',
         prod: ''
     },
+    rankSIcon: {
+        dev: '1505566371214262312',
+        prod: ''
+    },
+    rankXIcon: {
+        dev: '1505576371529715912',
+        prod: ''
+    },
+    rankUIcon: {
+        dev: '1505576382070132747',
+        prod: ''
+    }
 } satisfies Record<string, ApplicationEmojiId>;
 
 const getApplicationEmojiIds  = (type: keyof ApplicationEmojiId) => {

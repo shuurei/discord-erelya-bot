@@ -1,8 +1,10 @@
 import { DataSource, DataSourceOptions } from 'typeorm'
+
 import { BetterSqlite3ConnectionOptions } from 'typeorm/driver/better-sqlite3/BetterSqlite3ConnectionOptions.js'
 import { MysqlConnectionOptions } from 'typeorm/driver/mysql/MysqlConnectionOptions.js'
+
 import { env } from '@/utils'
-import path from 'path';
+import path from 'path'
 
 const base: Partial<DataSourceOptions> = {
     synchronize: env.isDev,
@@ -14,20 +16,21 @@ const MySQLConfigOptions: MysqlConnectionOptions = {
     type: 'mysql',
     host: env.DATABASE_HOST,
     database: env.DATABASE_NAME,
-    port: process.env.DATABASE_PORT,
+    port: env.DATABASE_PORT,
     username: env.DATABASE_USER,
-    password: env.DATABASE_PASSWORD,
+    password: env.DATABASE_PASSWORD
 }
 
 const MySQLiteConfigOptions: BetterSqlite3ConnectionOptions = {
     type: 'better-sqlite3',
-    database: path.join(import.meta.dirname, process.env.DB_DATABASE ?? 'erelya_dev.db'),
-    // logging: false,
+    database: path.join(import.meta.dirname, env.DATABASE_NAME ?? 'erelya_dev.db'),
 }
+
+console.log(env.DATABASE_TYPE, base, MySQLConfigOptions)
 
 export const db = new DataSource({
     ...base,
-    ...process.env.DATABASE_TYPE === 'mysql' ? MySQLConfigOptions : MySQLiteConfigOptions
+    ...env.DATABASE_TYPE === 'mysql' ? MySQLConfigOptions : MySQLiteConfigOptions
 } as DataSourceOptions);
 
 export default db;

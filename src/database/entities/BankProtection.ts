@@ -5,11 +5,12 @@ import { Member } from './Member'
 
 export enum BankProtectionType {
     HEIST_DEFENSE = 'HEIST_DEFENSE',
-    SECURITY_TRAP = 'SECURITY_TRAP',
-    VAULT = 'VAULT',
+    ALARM = 'ALARM',
+    STASH = 'STASH',
 }
 
 export enum BankProtectionRank {
+    X = 'X',
     S = 'S',
     A = 'A',
     D = 'D',

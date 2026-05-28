@@ -21,7 +21,6 @@ import {
     VoiceSessionManager,
     DatabaseManager
 } from './managers'
-import db from '@/database/db'
 
 export interface CustomClientHub extends Guild {
     ticketChannel?: ForumChannel;

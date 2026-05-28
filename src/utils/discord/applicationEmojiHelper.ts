@@ -2,7 +2,7 @@ import { ApplicationEmoji, Collection, GuildEmoji } from 'discord.js'
 import { ApplicationEmojiName, currentApplicationEmojiIds } from '@/config'
 import client from '@/client'
 
-type Emoji = {
+export type Emoji = {
     [Key in ApplicationEmojiName as `${Key & string}Emoji`]: GuildEmoji | ApplicationEmoji;
 };
 

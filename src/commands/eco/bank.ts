@@ -1,52 +1,27 @@
-import { Command, FastComponent, FastContainer, FastEmbed, Gacha } from '@/core'
+import { Command, FastComponent, FastContainer, FastEmbed } from '@/core'
 import { ApplicationCommandOptionType, GuildMember, MessageFlags } from 'discord.js'
 
 import { BankProtectionService, MemberService } from '@/database/services'
 import { BankProtectionRank, BankProtectionType } from '@/database/entities'
 import { applicationEmojiHelperSync, MemberHelperSync, parseUserMention } from '@/utils'
+import { bankRankTable, bankTypeTable, getBankRankFactor } from '@/data/tables/bank'
+import { bankProtectionTypeValues } from '@/data/values/bank'
 
-const bankRankGacha = new Gacha({
-    [BankProtectionRank.S]: 2,
-    [BankProtectionRank.A]: 8,
-    [BankProtectionRank.B]: 15,
-    [BankProtectionRank.C]: 25,
-    [BankProtectionRank.D]: 25,
-    [BankProtectionRank.E]: 15,
-    [BankProtectionRank.F]: 10,
-});
-
-const bankTypeGacha = new Gacha({
-    [BankProtectionType.VAULT]: 35,
-    [BankProtectionType.HEIST_DEFENSE]: 40,
-    [BankProtectionType.SECURITY_TRAP]: 25,
-});
-
-const getRankFactor = (rank: BankProtectionRank) => {
-    switch (rank) {
-        case BankProtectionRank.S: return 4;
-        case BankProtectionRank.A: return 3.5;
-        case BankProtectionRank.B: return 3;
-        case BankProtectionRank.C: return 2.5;
-        case BankProtectionRank.D: return 2;
-        case BankProtectionRank.E: return 1.5;
-        case BankProtectionRank.F: return 1;
-    }
-}
-
-const buildPayload = async (command: Command, member: GuildMember) => {
+const buildRankEmojiMap = (emojis: ReturnType<typeof applicationEmojiHelperSync>) => {
     const {
-        coinsIconEmoji,
-        shieldIconEmoji,
+        rankXIconEmoji,
+        rankSIconEmoji,
         rankAIconEmoji,
         rankBIconEmoji,
         rankDIconEmoji,
         rankCIconEmoji,
         rankEIconEmoji,
         rankFIconEmoji
-    } = applicationEmojiHelperSync();
+    } = emojis;
 
-    const RANK = {
-        [BankProtectionRank.S]: rankAIconEmoji,
+    return {
+        [BankProtectionRank.X]: rankXIconEmoji,
+        [BankProtectionRank.S]: rankSIconEmoji,
         [BankProtectionRank.A]: rankAIconEmoji,
         [BankProtectionRank.B]: rankBIconEmoji,
         [BankProtectionRank.C]: rankCIconEmoji,
@@ -54,18 +29,29 @@ const buildPayload = async (command: Command, member: GuildMember) => {
         [BankProtectionRank.E]: rankEIconEmoji,
         [BankProtectionRank.F]: rankFIconEmoji
     } as const;
+}
 
-    const PROTECTION_EFFECTS = {
-        [BankProtectionType.HEIST_DEFENSE]: (rank: BankProtectionRank) => {
-            return `***Réduit les chances de réussite d'un braquage de \`${8 * getRankFactor(rank)}%\`***`
-        },
-        [BankProtectionType.VAULT]: (rank: BankProtectionRank) => {
-            return `***Réduit les pertes subies lors d'un braquage de \`${5 * getRankFactor(rank)}%\`***`
-        },
-        [BankProtectionType.SECURITY_TRAP]: (rank: BankProtectionRank) => {
-            return `***Le braqueur perd \`${(1.2 * getRankFactor(rank)).toPrecision(2)}%\` de ses pièces de serveur si le braquage échoue***`
-        },
-    } as const;
+const protectionEffects = {
+    [BankProtectionType.HEIST_DEFENSE]: (rank: BankProtectionRank) => {
+        return `***Réduit les chances de réussite d'un braquage de \`${bankProtectionTypeValues.HEIST_DEFENSE * getBankRankFactor(rank)}%\`***`
+    },
+    [BankProtectionType.STASH]: (rank: BankProtectionRank) => {
+        return `***Réduit les pertes subies lors d'un braquage de \`${bankProtectionTypeValues.STASH * getBankRankFactor(rank)}%\`***`
+    },
+    [BankProtectionType.ALARM]: (rank: BankProtectionRank) => {
+        return `***Le braqueur perd \`${(bankProtectionTypeValues.ALARM * getBankRankFactor(rank)).toPrecision(2)}%\` de ses pièces de serveur si le braquage échoue***`
+    },
+} as const;
+
+export const protectionTypeLabels = {
+    [BankProtectionType.HEIST_DEFENSE]: 'Défense',
+    [BankProtectionType.STASH]: 'Planque',
+    [BankProtectionType.ALARM]: 'Alarme',
+} as const;
+
+const buildPayload = async (command: Command, member: GuildMember) => {
+    const { coinsIconEmoji, shieldIconEmoji, ...emojis } = applicationEmojiHelperSync();
+    const rankEmojis = buildRankEmojiMap(emojis);
 
     const helper = MemberHelperSync(member);
     const guild = member.guild;
@@ -104,7 +90,7 @@ const buildPayload = async (command: Command, member: GuildMember) => {
                         FastComponent.createTextDisplay([
                             `### - ${shieldIconEmoji} **Protection (${protections.length}/2)**`,
                             protections.length > 0
-                                ? protections.map(({ rank, type }) => `> ${RANK[rank]} **|** ${PROTECTION_EFFECTS[type](rank)}`).join('\n')
+                                ? protections.map(({ rank, type }) => `> ${rankEmojis[rank]} **|** ${protectionEffects[type](rank)}`).join('\n')
                                 : '> *Aucune protection*'
                         ].join('\n'))
                     ]
@@ -169,8 +155,8 @@ export default new Command({
                 const protections = await BankProtectionService.getAll({ guildId, userId });
                 const ownedTypes = protections.map(({ type }) => type);
 
-                const rank = bankRankGacha.roll();
-                const type = bankTypeGacha.roll(ownedTypes);
+                const rank = bankRankTable.roll();
+                const type = bankTypeTable.roll(ownedTypes);
 
                 if (rank && type) {
                     await BankProtectionService.add({ guildId, userId }, { rank, type });
@@ -180,11 +166,32 @@ export default new Command({
             }
 
             case 'help': {
+                const rankEmojis = buildRankEmojiMap(applicationEmojiHelperSync());
+
                 return await interaction.reply({
                     flags: MessageFlags.Ephemeral,
                     embeds: [FastEmbed.create({
-                        title: "C'est quoi la banque ?",
-                        description: 'Help'
+                        color: 'indigo',
+                        title: "Système de la banque",
+                        description: [
+                            "La banque conserve vos pièces de serveur et peut être renforcée avec jusqu'à **2 protections** ! Chaque protection possède un **rang** (de F à X) et un **type** qui détermine son effet :",
+                            "- 🛡️ **Défense**: Réduit les chances qu'un braquage réussisse",
+                            '- 🏠 **Planque**: Réduit les pertes si un braquage réussit',
+                            "- ⏰ **Alarme**: Pénalise le braqueur en cas d'échec",
+                            "Plus le rang est élevé, plus l'effet est puissant. Les protections sont obtenues aléatoirement via le bouton **renforcer**"
+                        ].join('\n'),
+                        fields: [
+                            {
+                                name: 'Rang probabilité',
+                                value: Object.entries(bankRankTable.odds()).map(([rank, chance]) => `> ${(rankEmojis as any)[rank]} \`${chance}%\``).join('\n'),
+                                inline: true
+                            },
+                            {
+                                name: 'Type probabilité',
+                                value: Object.entries(bankTypeTable.odds()).map(([type, chance]) => `> **${(protectionTypeLabels as any)[type]}** \`${chance}%\``).join('\n'),
+                                inline: true
+                            }
+                        ]
                     })]
                 });
             }
