@@ -14,7 +14,7 @@ import { formatTimeLeft, formatTimeLeftFromMinutes, getDominantColor, tzMap } fr
 import { DateTime } from 'luxon'
 
 import { handleMemberDailyQuestSync } from '@/client/handlers/member-daily-quest-sync'
-import { calculateQuestBonusMultiplier, MESSAGE_POOL, VOICE_POOL } from '@/utils/daily-quest'
+import { calculateQuestBonusMultiplier, VOICE_POOL } from '@/utils/daily-quest'
 
 export default new Command({
     nameLocalizations: {
@@ -85,7 +85,6 @@ export default new Command({
 
         const quest = {
             voice: VOICE_POOL.find((f) => f.value === questDatabase?.voiceMinutesTarget),
-            message: MESSAGE_POOL.find((f) => f.value === questDatabase?.messagesSentTarget),
         }
 
         const bonusMultiplier = calculateQuestBonusMultiplier(quest);
@@ -103,25 +102,6 @@ export default new Command({
             });
         }
 
-        if (isMessageQuestEnabled && quest.message) {
-            fields.push({
-                name: `💬 Messages`,
-                value: [
-                    `**${questDatabase.messagesSentProgress}** / **${quest.message.value}** envoyés`,
-                    createProgressBar(Math.max(0, questDatabase.messagesSentProgress / quest.message.value), { length: 7, asciiChar: true, showPercentage: true }),
-                ].join('\n'),
-                inline: true
-            });
-        }
-
-        if (!isMessageQuestEnabled) {
-            quest.message = {} as any
-            quest.message!.rewards = {
-                activityXp: 0,
-                guildCoins: 0
-            }
-        }
-
         if (!isVoiceQuestEnabeld) {
             quest.voice = {} as any
             quest.voice!.rewards = {
@@ -130,8 +110,8 @@ export default new Command({
             }
         }
 
-        const guildCoinsReward = Math.floor((quest.message?.rewards.guildCoins ?? 0) + (quest.voice?.rewards.guildCoins ?? 0) * bonusMultiplier);
-        const activityXpReward = Math.floor((quest.message?.rewards.activityXp ?? 0) + (quest.voice?.rewards.activityXp ?? 0) * bonusMultiplier);
+        const guildCoinsReward = Math.floor((quest.voice?.rewards.guildCoins ?? 0) * bonusMultiplier);
+        const activityXpReward = Math.floor((quest.voice?.rewards.activityXp ?? 0) * bonusMultiplier);
 
         fields.push({
             name: 'Récompenses',
@@ -141,8 +121,7 @@ export default new Command({
             ].filter(Boolean).join('\n')
         });
 
-        const isCompleted = (quest.voice ? questDatabase.voiceMinutesProgress === quest.voice.value : true)
-            && (quest.message ? questDatabase.messagesSentProgress === quest.message.value : true);
+        const isCompleted = (quest.voice ? questDatabase.voiceMinutesProgress === quest.voice.value : true);
 
         const payload = {
             color: memberAvatarDominantColor,

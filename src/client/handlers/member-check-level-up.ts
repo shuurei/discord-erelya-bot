@@ -69,7 +69,7 @@ export async function handleMemberCheckLevelUp({
     const displayLevel = reachMaxLevel ? 'MAX' : newLevel;
 
     const messageLines: string[] = [
-        `${member} Nv. **${currentLevel}** ➔ Nv. **${displayLevel}** 🎉`
+        `Nv. **${currentLevel}** ➔ Nv. **${displayLevel}** 🎉`
     ];
 
     if (rewards.roleIds.length) {

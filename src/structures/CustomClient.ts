@@ -46,7 +46,7 @@ export class CustomClient extends Client {
         heartLogsChannel?: TextChannel;
     };
 
-    mainGuild: Guild & {
+    mainGuild!: Guild & {
         welcomeChannel: TextChannel;
     };
 
@@ -118,25 +118,13 @@ export class CustomClient extends Client {
 
         this.reflexions = [
             `v${pkg.version}`,
-            "i'm awake",
-            "running on caffeine & chaos",
-            "loading sarcasm module",
-            "listening to your thoughts",
-            "hello world !",
-            "hello world, again",
-            "hello world, again.. and again",
-            "debugging life, one line at a time",
-            "sending virtual high-fives",
-            "in the void, observing",
-            "echoes of the code",
-            "existential.exe running",
-            "i ❤ Radiohead",
-            "predicting chaos.. mostly correctly",
-            "ca-n.. i.. can i love ?",
-            "404 social life not found",
-            "compiling memes.. almost done",
-            "running on empty.. kinda",
-            "i ❤ The Smile",
+            "Bonjour le monde !",
+            "existential.exe en cours d'exécution..",
+            "J'❤ Radiohead",
+            "Neveress To Everness c'est génial 👀",
+            "La prédiction du chaos.. Est plutôt juste ?",
+            "Puis-je aimer ? Mhh",
+            "Fonctionne à vide.. En quelque sorte ?",
         ] as const;
     }
 
@@ -189,7 +177,7 @@ export class CustomClient extends Client {
                             this.hub = Object.assign(hub, {
                                 ticketChannel
                             });
-                        
+
                             this.logger.info('Hub ticket channel initialized', { arrowColor: 'greenBright' });
                         } else {
                             throw new Error(`❌ » Hub ticket channel invalid (${process.env.HUB_TICKET_CHANNEL_ID})`);
@@ -247,7 +235,7 @@ export class CustomClient extends Client {
 
         await this.events.listen({ directory: 'events' });
         await this.commands.load({ directory: 'commands' });
-        
+
         return await this.login(token);
     }
 }
