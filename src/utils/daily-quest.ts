@@ -208,7 +208,7 @@ export const getRandomFromPool = (pool: QuestValue[]): QuestValue => {
 // }
 
 export const generateDailyQuest = () => {
-    return Math.random() < 0.8 ? getRandomFromPool(VOICE_POOL) : null;
+    return getRandomFromPool(VOICE_POOL);
 }
 
 export const calculateQuestBonusMultiplier = (quest: { voice?: QuestValue | null, message?: QuestValue | null }) => {
