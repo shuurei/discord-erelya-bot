@@ -1,18 +1,18 @@
-import { Channel } from 'discord.js'
+import { Channel, GuildMember } from 'discord.js'
 import { MemberDailyQuestModel } from '@/database/core/models'
 
 export async function handleMemberDailyQuestNotify({
-    userId,
+    member,
     channel,
     oldQuest,
     newQuest
 }: {
-    userId: string;
+    member?: GuildMember;
     channel?: Channel | null;
     oldQuest: MemberDailyQuestModel,
     newQuest: MemberDailyQuestModel
 }) {
-    if (oldQuest.isClaimed || !channel?.isSendable()) return;
+    if (oldQuest.isClaimed || !channel?.isSendable() || !member) return;
 
     const messageJustCompleted = oldQuest.messagesSentTarget
         ? oldQuest.messagesSentProgress < oldQuest.messagesSentTarget &&
@@ -33,10 +33,10 @@ export async function handleMemberDailyQuestNotify({
         : true;
 
     if (isMessageCompleted && isVoiceCompleted) {
-        await channel.send(`**Quête quotidienne complétée !** Récompense disponible 🎁`);
+        await channel.send(`\`${member.user.username}\` **Quête quotidienne complétée !** Récompense disponible 🎁`);
     } else if (voiceJustCompleted) {
-        await channel.send(`**Quête quotidienne** 🎯 — Objectif vocal complété (**1 / 2**)`);
+        await channel.send(`\`${member.user.username}\` **Quête quotidienne** 🎯 — Objectif vocal complété (**1 / 2**)`);
     } else if (messageJustCompleted) {
-        await channel.send(`**Quête quotidienne** 🎯 — Objectif message complété (**1 / 2**)`);
+        await channel.send(`\`${member.user.username}\` **Quête quotidienne** 🎯 — Objectif message complété (**1 / 2**)`);
     }
 }

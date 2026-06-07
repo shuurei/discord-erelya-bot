@@ -410,7 +410,7 @@ export default new Event({
                 });
 
                 await handleMemberDailyQuestNotify({
-                    userId,
+                    member: message.member,
                     channel: message.channel,
                     oldQuest: quest,
                     newQuest

@@ -139,7 +139,7 @@ new Cron('* * * * *', async () => {
                     });
 
                     await handleMemberDailyQuestNotify({
-                        userId,
+                        member: guild.members.cache.get(userId),
                         channel: guild.channels.cache.get(session.channelId),
                         oldQuest: quest,
                         newQuest
@@ -152,7 +152,7 @@ new Cron('* * * * *', async () => {
         if (client.spamBuffer.size > 0) {
             client.spamBuffer.clear();
         }
-    } catch (ex) {
+    } catch (ex: any) {
         return jobsLogger.error(ex);
     }
 }, {
