@@ -3,15 +3,11 @@ import { Command } from '@/structures/Command'
 
 import { memberService } from '@/database/services'
 
-import { randomNumber } from '@/utils'
 import { createNotifCard } from '@/ui/assets/cards/notifCard'
 import { createMediaGallery } from '@/ui/components/common'
 
-const MIN_BET = 200;
-const MAX_BET = 75_000;
-
-const MIN_WIN = 0.4;
-const MAX_WIN = 0.5;
+const MIN_BET = 100;
+const MAX_BET = 100_000;
 
 const handleCommand = async ({
     amount,
@@ -81,7 +77,7 @@ const handleCommand = async ({
         ];
     }
 
-    const win = Math.random() < randomNumber(MIN_WIN, MAX_WIN, true);
+    const win = Math.random() < 0.5;
 
     if (win) {
         await memberService.addGuildCoins({ guildId, userId: member.id }, amount);
